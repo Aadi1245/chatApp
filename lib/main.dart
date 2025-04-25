@@ -3,10 +3,20 @@
 import 'package:chattest/pages/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/onboarding.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 // import 'package:chattest/pages/onboarding.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBo8dd5UxPfE2KpTUjHpDEt3QBefmubLs8",
+          appId: "1:781777436407:android:b85effdf8936d3c0855df2",
+          messagingSenderId: "781777436407",
+          projectId: "chatup-9c474"));
+
   runApp(MyApp());
 }
 
@@ -15,12 +25,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Dash Chat Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
-      ),
-      home: Onbpoarding(),
-    );
+        debugShowCheckedModeBanner: false,
+        title: 'Dash Chat Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
+        ),
+        home: Onbpoarding());
   }
 }

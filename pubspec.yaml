@@ -36,6 +36,19 @@ dependencies:
   cupertino_icons: ^1.0.8
   dash_chat_2: ^0.0.21
   flutter_svg: ^2.1.0
+  cloud_firestore: 
+  firebase_core:
+  firebase_storage: 
+  image_picker: 
+  random_string: 
+  firebase_auth:
+  google_sign_in: ^6.3.0
+  shared_preferences: ^2.5.3
+  intl:
+  path_provider:
+  permission_handler:
+  flutter_sound:
+  audioplayers:
 
 dev_dependencies:
   flutter_test:
