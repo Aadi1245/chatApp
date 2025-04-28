@@ -68,6 +68,12 @@ class _HomePageState extends State<HomePage> {
                   itemCount: snapshot.data.docs.length,
                   itemBuilder: (context, index) {
                     DocumentSnapshot ds = snapshot.data.docs['index'];
+                    return ChatRoomListTile(
+                      chatroomId: ds.id,
+                      lastMessage: ds["lastMessage"],
+                      myUserName: myUserName!,
+                      time: ds["lastMessageSendTs"],
+                    );
                   })
               : Container();
         });
@@ -75,8 +81,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    getTheSharedpreferenceData();
+    onTheLoad();
     super.initState();
+  }
+
+  onTheLoad() async {
+    await getTheSharedpreferenceData();
+    chatRoomsStream = await DataBasemethods().getChatRooms();
+    setState(() {});
   }
 
   @override
@@ -108,7 +120,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white),
                   ),
                   Text(
-                    "Aadi ",
+                    myName!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 28,
@@ -203,77 +215,7 @@ class _HomePageState extends State<HomePage> {
                               return buildResultCard(e);
                             }).toList(),
                           )
-                        : Material(
-                            elevation: 3,
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: EdgeInsets.all(10),
-                              width: MediaQuery.of(context).size.width,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Colors.white),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(50),
-                                    child: Image.asset(
-                                      "assets/images/profile_img.jpg",
-                                      height: 70,
-                                      width: 70,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                        "Tony Stark",
-                                        textAlign: TextAlign.left,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black),
-                                      ),
-                                      Text(
-                                        "hello cap how are you ?",
-                                        textAlign: TextAlign.left,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color.fromARGB(
-                                                78, 0, 0, 0)),
-                                      ),
-                                    ],
-                                  ),
-                                  Spacer(),
-                                  Container(
-                                    alignment: Alignment.topLeft,
-                                    child: Text(
-                                      "2:00 Pm",
-                                      textAlign: TextAlign.left,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
+                        : chatRoomList()
                   ],
                 ),
               ),
@@ -302,7 +244,7 @@ class _HomePageState extends State<HomePage> {
             getChatRoomIdByUserName(myPicture!, data['username']);
 
         Map<String, dynamic> chatInfoMap = {
-          "users": [myUserName, data['username']],
+          "user": [myUserName, data['username']],
         };
         await DataBasemethods().creatChatRoom(chatRoomId, chatInfoMap);
         Navigator.push(
@@ -389,83 +331,119 @@ class _HomePageState extends State<HomePage> {
 }
 
 class ChatRoomListTile extends StatefulWidget {
-  const ChatRoomListTile({super.key});
+  String chatroomId, lastMessage, myUserName, time;
+  ChatRoomListTile(
+      {required this.chatroomId,
+      required this.lastMessage,
+      required this.myUserName,
+      required this.time,
+      super.key});
 
   @override
   State<ChatRoomListTile> createState() => _ChatRoomListTileState();
 }
 
 class _ChatRoomListTileState extends State<ChatRoomListTile> {
+  String profilePicUrl = "", name = "", userName = "", id = "";
+
+  getThisUserInfo() async {
+    userName =
+        widget.chatroomId.replaceAll("_", "").replaceAll(widget.myUserName, "");
+    QuerySnapshot querySnapshot = await DataBasemethods().getUserInfo(userName);
+    name = "${querySnapshot.docs[0]["Name"]}";
+    profilePicUrl = "${querySnapshot.docs[0]["Image"]}";
+    id = "${querySnapshot.docs[0]["Id"]}";
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    getThisUserInfo();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Material(
-      elevation: 3,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: EdgeInsets.all(10),
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10), color: Colors.white),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Image.asset(
-                "assets/images/profile_img.jpg",
-                height: 70,
-                width: 70,
-                fit: BoxFit.cover,
-              ),
-            ),
-            SizedBox(
-              width: 10,
-            ),
-            Column(
+    return GestureDetector(
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ChatPage(
+                      name: name,
+                      profileUrl: profilePicUrl,
+                      userName: userName)));
+        },
+        child: Material(
+          elevation: 3,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: EdgeInsets.all(10),
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10), color: Colors.white),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                profilePicUrl == ""
+                    ? CircularProgressIndicator()
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(50),
+                        child: Image.network(
+                          profilePicUrl,
+                          height: 70,
+                          width: 70,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                 SizedBox(
-                  height: 10,
+                  width: 10,
                 ),
-                Text(
-                  "Tony Stark",
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      name,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black),
+                    ),
+                    Text(
+                      widget.lastMessage,
+                      textAlign: TextAlign.left,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color.fromARGB(78, 0, 0, 0)),
+                    ),
+                  ],
                 ),
-                Text(
-                  "hello cap how are you ?",
-                  textAlign: TextAlign.left,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color.fromARGB(78, 0, 0, 0)),
+                Spacer(),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    widget.time,
+                    textAlign: TextAlign.left,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
+                  ),
                 ),
               ],
             ),
-            Spacer(),
-            Container(
-              alignment: Alignment.topLeft,
-              child: Text(
-                "2:00 Pm",
-                textAlign: TextAlign.left,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ));
+          ),
+        ));
   }
 }
