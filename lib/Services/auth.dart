@@ -1,6 +1,7 @@
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -62,5 +63,14 @@ class Authmethods {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => HomePage()));
     }
+  }
+
+  Future signOut() async {
+    FirebaseAuth.instance.signOut();
+  }
+
+  Future delete() async {
+    User? user = await FirebaseAuth.instance.currentUser;
+    user!.delete();
   }
 }
