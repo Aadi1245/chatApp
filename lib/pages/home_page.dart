@@ -1,6 +1,7 @@
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/chat_page.dart';
+import 'package:chattest/pages/profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -19,11 +20,13 @@ class _HomePageState extends State<HomePage> {
   var queryResultSet = [];
   var tempSearchStore = [];
 
-  getChatRoomIdByUserName(String a, String b) {
+  String getChatRoomIdByUserName(String a, String b) {
     if (a.substring(0, 1).codeUnitAt(0) > b.substring(0, 1).codeUnitAt(0)) {
-      return "$b\_$a";
+      print("================${b}_${a}");
+      return "${b}_${a}";
     } else {
-      return "$a\_$b";
+      print("${a}_${b}====================");
+      return "${a}_${b}";
     }
   }
 
@@ -51,6 +54,7 @@ class _HomePageState extends State<HomePage> {
           if (element['username'].startsWith(capitalizedValue)) {
             setState(() {
               tempSearchStore.add(element);
+              print("${tempSearchStore[0]["username"]}------------>>>>>>");
             });
           }
         });
@@ -104,7 +108,7 @@ class _HomePageState extends State<HomePage> {
               child: Row(
                 children: [
                   Text(
-                    "👋 ",
+                    "👋",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 28,
@@ -112,30 +116,38 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.yellowAccent),
                   ),
                   Text(
-                    " Hello, ",
+                    " Hello,",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 20,
                         fontWeight: FontWeight.w500,
                         color: Colors.white),
                   ),
                   Text(
                     myName!,
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 20,
                         fontWeight: FontWeight.w500,
                         color: Colors.white),
                   ),
                   Spacer(),
-                  Container(
-                    padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => Profile()));
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Icon(
+                        Icons.person,
+                        size: 30,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -212,6 +224,7 @@ class _HomePageState extends State<HomePage> {
                             shrinkWrap: true,
                             primary: false,
                             children: tempSearchStore.map((e) {
+                              print("${e["username"]}");
                               return buildResultCard(e);
                             }).toList(),
                           )
@@ -240,9 +253,10 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () async {
         search = false;
+        print("---------------${data["username"]}------${myUserName!}------");
         String chatRoomId =
-            getChatRoomIdByUserName(myPicture!, data['username']);
-
+            getChatRoomIdByUserName(myUserName!, data['username']);
+        print("-----------chat chat-----${chatRoomId!}------");
         Map<String, dynamic> chatInfoMap = {
           "user": [myUserName, data['username']],
         };

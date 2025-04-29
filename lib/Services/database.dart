@@ -40,6 +40,7 @@ class DataBasemethods {
         .doc(chatRoomId)
         .get();
     if (snapshot.exists) {
+      print("true hai==========");
       return true;
     } else {
       return FirebaseFirestore.instance
@@ -50,6 +51,7 @@ class DataBasemethods {
   }
 
   Future<Stream<QuerySnapshot>> getChatRoomMessage(chatRoomId) async {
+    print("${chatRoomId}===============>>>>");
     return await FirebaseFirestore.instance
         .collection("chatRoom")
         .doc(chatRoomId)

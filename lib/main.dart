@@ -3,6 +3,7 @@
 import 'package:chattest/pages/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/onboarding.dart';
+import 'package:chattest/pages/profile.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // import 'package:chattest/pages/onboarding.dart';

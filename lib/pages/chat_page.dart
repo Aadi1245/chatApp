@@ -222,8 +222,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   onLoad() async {
-    await getAndSetMessage();
     await getTheSharedpreferenceData();
+    await getAndSetMessage();
     setState(() {});
   }
 
@@ -363,7 +363,7 @@ class _ChatPageState extends State<ChatPage> {
                               decoration: InputDecoration(
                                   suffixIcon: GestureDetector(
                                       onTap: () {
-                                        getImage();
+                                        // getImage();
                                       },
                                       child: Icon(Icons.attach_file)),
                                   hintText: " Write a message..",
@@ -422,6 +422,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   getAndSetMessage() async {
+    print("${chatRoomId}chat page===========");
     messageStream = await DataBasemethods().getChatRoomMessage(chatRoomId);
     setState(() {});
   }
