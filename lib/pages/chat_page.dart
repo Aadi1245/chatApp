@@ -410,10 +410,13 @@ class _ChatPageState extends State<ChatPage> {
         builder: (context, AsyncSnapshot snapshot) {
           return snapshot.hasData
               ? ListView.builder(
+                  shrinkWrap: true,
                   itemCount: snapshot.data.docs.length,
                   reverse: true,
                   itemBuilder: (context, index) {
                     DocumentSnapshot ds = snapshot.data.docs[index];
+                    print(
+                        "chat messages-${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
                     return chatMessageTile(
                         ds["message"], myUserName == ds["sendBy"], ds["Data"]);
                   })
@@ -424,6 +427,7 @@ class _ChatPageState extends State<ChatPage> {
   getAndSetMessage() async {
     print("${chatRoomId}chat page===========");
     messageStream = await DataBasemethods().getChatRoomMessage(chatRoomId);
+    print("${messageStream!.first}chat page after ===========");
     setState(() {});
   }
 

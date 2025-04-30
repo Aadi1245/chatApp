@@ -4,6 +4,7 @@ import 'package:chattest/pages/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/onboarding.dart';
 import 'package:chattest/pages/profile.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // import 'package:chattest/pages/onboarding.dart';
@@ -17,6 +18,10 @@ void main() async {
           appId: "1:781777436407:android:b85effdf8936d3c0855df2",
           messagingSenderId: "781777436407",
           projectId: "chatup-9c474"));
+
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.playIntegrity,
+  );
 
   runApp(MyApp());
 }

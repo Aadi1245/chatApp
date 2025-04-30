@@ -1,4 +1,7 @@
 import 'package:chattest/Services/auth.dart';
+import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/pages/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -16,9 +19,22 @@ class _OnbpoardingState extends State<Onbpoarding> {
       body: Container(
         child: Column(
           children: [
-            Image.asset("assets/images/images.jpg"),
+            Material(
+                elevation: 3,
+                borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30)),
+                child: Container(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30)),
+                      child: Image.asset(
+                          fit: BoxFit.cover, "assets/images/images.jpg"),
+                    ))),
             SizedBox(
-              height: 20,
+              height: 10,
             ),
             Padding(
               padding:
@@ -33,7 +49,7 @@ class _OnbpoardingState extends State<Onbpoarding> {
               ),
             ),
             SizedBox(
-              height: 20,
+              height: 10,
             ),
             Padding(
               padding:
@@ -48,11 +64,17 @@ class _OnbpoardingState extends State<Onbpoarding> {
               ),
             ),
             SizedBox(
-              height: 20,
+              height: 10,
             ),
             GestureDetector(
-              onTap: () {
-                Authmethods().signInWithGoogle(context);
+              onTap: () async {
+                SharedPreferenceHelper preferenceHelper =
+                    SharedPreferenceHelper();
+                String? name = await preferenceHelper.getUserDisplayName();
+                name == null || name.isEmpty
+                    ? Authmethods().signInWithGoogle(context)
+                    : Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (context) => HomePage()));
               },
               child: Container(
                 margin: EdgeInsets.only(left: 25, right: 25),

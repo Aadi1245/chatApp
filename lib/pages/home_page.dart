@@ -70,8 +70,12 @@ class _HomePageState extends State<HomePage> {
               ? ListView.builder(
                   padding: EdgeInsets.all(10),
                   itemCount: snapshot.data.docs.length,
+                  shrinkWrap: true,
                   itemBuilder: (context, index) {
-                    DocumentSnapshot ds = snapshot.data.docs['index'];
+                    DocumentSnapshot ds = snapshot.data.docs[index];
+                    print("------------------->>>>> inside chtroomlist");
+                    print(
+                        "chatroomlist============>>>>${ds["lastMessage"]}------${ds["lastMessageSendTs"]}");
                     return ChatRoomListTile(
                       chatroomId: ds.id,
                       lastMessage: ds["lastMessage"],
@@ -89,9 +93,11 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  List<String> subName = [""];
   onTheLoad() async {
     await getTheSharedpreferenceData();
     chatRoomsStream = await DataBasemethods().getChatRooms();
+    subName = myName!.split(" ");
     setState(() {});
   }
 
@@ -124,7 +130,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white),
                   ),
                   Text(
-                    myName!,
+                    subName.first,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
