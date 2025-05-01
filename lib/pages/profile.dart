@@ -187,41 +187,46 @@ class _ProfileState extends State<Profile> {
                                 SizedBox(
                                   width: 5,
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.only(left: 10),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        "email",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.only(left: 10),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          "email",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w800),
+                                        ),
                                       ),
-                                    ),
-                                    Container(
-                                      alignment: Alignment.centerLeft,
-                                      padding: EdgeInsets.only(
-                                          left: 10,
-                                          top: 5,
-                                          bottom: 5,
-                                          right: 5),
-                                      // height:
-                                      //     50, //MediaQuery.of(context).size.height,
-                                      // width: MediaQuery.of(context).size.width,
-                                      child: Text(
-                                        "${myEmail}",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w800),
+                                      Container(
+                                        alignment: Alignment.centerLeft,
+                                        padding: EdgeInsets.only(
+                                            left: 10,
+                                            top: 5,
+                                            bottom: 5,
+                                            right: 5),
+                                        // height:
+                                        //     50, //MediaQuery.of(context).size.height,
+                                        // width: MediaQuery.of(context).size.width,
+                                        child: Text(
+                                          "${myEmail}",
+                                          // textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w800),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),

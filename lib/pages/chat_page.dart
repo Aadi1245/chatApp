@@ -34,7 +34,8 @@ class _ChatPageState extends State<ChatPage> {
     myName = await SharedPreferenceHelper().getUserDisplayName();
     myEmail = await SharedPreferenceHelper().getUserEmail();
     myPicture = await SharedPreferenceHelper().getUserImage();
-    chatRoomId = getChatRoomIdByUserName(widget.userName, myUserName!);
+    chatRoomId = getChatRoomIdByUserName(myUserName!, widget.userName);
+    print("chatpage shared chatroomid --- ${chatRoomId}");
     setState(() {});
   }
 
@@ -234,12 +235,9 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
   }
 
-  getChatRoomIdByUserName(String a, String b) {
-    if (a.substring(0, 1).codeUnitAt(0) > b.substring(0, 1).codeUnitAt(0)) {
-      return "$b\_$a";
-    } else {
-      return "$a\_$b";
-    }
+  String getChatRoomIdByUserName(String a, String b) {
+    List<String> users = [a.toLowerCase(), b.toLowerCase()]..sort();
+    return "${users[0]}_${users[1]}";
   }
 
   addMessage(bool sendClicked) async {
@@ -282,60 +280,61 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey,
+      resizeToAvoidBottomInset: true,
       body: Container(
         margin: EdgeInsets.only(
           top: 35,
         ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 10,
-                ),
-                GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    )),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.25,
-                ),
-                Text(
-                  widget.name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Expanded(
-                child: Container(
-              padding: EdgeInsets.only(left: 10, right: 10),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(30),
-                      topLeft: Radius.circular(30))),
-              child: Column(
+        child: Expanded(
+          child: Column(
+            children: [
+              Row(
                 children: [
                   SizedBox(
-                    height: 30,
+                    width: 10,
                   ),
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.78,
-                    child: chatMessage(),
+                  GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                      )),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.25,
                   ),
-                  Container(
-                    child: Row(
+                  Text(
+                    widget.name,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              Expanded(
+                  child: Container(
+                padding: EdgeInsets.only(left: 10, right: 10),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(30),
+                        topLeft: Radius.circular(30))),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 30,
+                    ),
+                    Expanded(
+                      // height: MediaQuery.of(context).size.height * 0.78,
+                      child: chatMessage(),
+                    ),
+                    Row(
                       children: [
                         Container(
                           padding: EdgeInsets.all(5),
@@ -391,12 +390,12 @@ class _ChatPageState extends State<ChatPage> {
                           ),
                         ),
                       ],
-                    ),
-                  )
-                ],
-              ),
-            ))
-          ],
+                    )
+                  ],
+                ),
+              ))
+            ],
+          ),
         ),
       ),
     );

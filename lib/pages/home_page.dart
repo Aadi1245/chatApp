@@ -21,13 +21,8 @@ class _HomePageState extends State<HomePage> {
   var tempSearchStore = [];
 
   String getChatRoomIdByUserName(String a, String b) {
-    if (a.substring(0, 1).codeUnitAt(0) > b.substring(0, 1).codeUnitAt(0)) {
-      print("================${b}_${a}");
-      return "${b}_${a}";
-    } else {
-      print("${a}_${b}====================");
-      return "${a}_${b}";
-    }
+    List<String> users = [a.toLowerCase(), b.toLowerCase()]..sort();
+    return "${users[0]}_${users[1]}";
   }
 
   initiateSearch(String value) {
@@ -300,32 +295,34 @@ class _HomePageState extends State<HomePage> {
                 SizedBox(
                   width: 10,
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      data['Name'],
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black),
-                    ),
-                    Text(
-                      data['username'],
-                      textAlign: TextAlign.left,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color.fromARGB(78, 0, 0, 0)),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        data['Name'],
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black),
+                      ),
+                      Text(
+                        data['username'],
+                        textAlign: TextAlign.left,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color.fromARGB(78, 0, 0, 0)),
+                      ),
+                    ],
+                  ),
                 ),
                 // Spacer(),
                 // Container(
