@@ -2,7 +2,7 @@
 // import 'package:chattest/pages/home.dart';
 import 'package:chattest/pages/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
-import 'package:chattest/pages/onboarding.dart';
+import 'package:chattest/pages/starter/onboarding.dart';
 import 'package:chattest/pages/profile.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';

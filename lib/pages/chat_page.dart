@@ -285,41 +285,40 @@ class _ChatPageState extends State<ChatPage> {
         margin: EdgeInsets.only(
           top: 35,
         ),
-        child: Expanded(
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 10,
-                  ),
-                  GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                      )),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.25,
-                  ),
-                  Text(
-                    widget.name,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              Expanded(
-                  child: Container(
-                padding: EdgeInsets.only(left: 10, right: 10),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 10,
+                ),
+                GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                    )),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.25,
+                ),
+                Text(
+                  widget.name,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.only(left: 5, right: 5),
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -335,67 +334,99 @@ class _ChatPageState extends State<ChatPage> {
                       child: chatMessage(),
                     ),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        // Microphone button
                         Container(
-                          padding: EdgeInsets.all(5),
+                          margin: EdgeInsets.only(bottom: 6),
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              color: Colors.blueGrey),
-                          child: Icon(
-                            Icons.mic,
-                            size: 30,
-                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            color: Colors.blueGrey,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.mic, color: Colors.white),
+                            onPressed: () {
+                              // Handle mic
+                            },
                           ),
                         ),
-                        SizedBox(
-                          width: 10,
-                        ),
+                        SizedBox(width: 10),
+
+                        // Text field with attachment icon
                         Expanded(
                           child: Container(
-                            height: 50,
-                            padding: EdgeInsets.only(top: 3),
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            margin: EdgeInsets.only(bottom: 6),
                             decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: const Color.fromARGB(83, 212, 226, 231)),
-                            child: TextField(
-                              controller: messageController,
-                              decoration: InputDecoration(
-                                  suffixIcon: GestureDetector(
-                                      onTap: () {
-                                        // getImage();
-                                      },
-                                      child: Icon(Icons.attach_file)),
-                                  hintText: " Write a message..",
-                                  border: InputBorder.none),
+                              color: Color(0xFFE0F2F1),
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: messageController,
+                                    decoration: InputDecoration(
+                                      hintText: "Type a message...",
+                                      border: InputBorder.none,
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    // getImage();
+                                  },
+                                  child: Icon(Icons.attach_file,
+                                      color: Colors.grey[700]),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            addMessage(true);
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(50),
-                                color: Colors.blueGrey),
-                            child: Icon(
-                              Icons.send,
-                              size: 30,
-                              color: Colors.white,
-                            ),
+                        SizedBox(width: 10),
+
+                        // Send button
+                        Container(
+                          margin: EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.blueGrey,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.send, color: Colors.white),
+                            onPressed: () {
+                              addMessage(true);
+                            },
                           ),
                         ),
                       ],
                     )
                   ],
                 ),
-              ))
-            ],
-          ),
+              ),
+            )
+          ],
         ),
       ),
     );

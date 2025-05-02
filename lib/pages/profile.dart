@@ -1,6 +1,6 @@
 import 'package:chattest/Services/auth.dart';
 import 'package:chattest/Services/database.dart';
-import 'package:chattest/pages/onboarding.dart';
+import 'package:chattest/pages/starter/onboarding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -96,12 +96,14 @@ class _ProfileState extends State<Profile> {
                             padding: EdgeInsets.all(20),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(100),
-                              child: Image.network(
-                                myPicture!,
-                                height: 150,
-                                width: 150,
-                                fit: BoxFit.cover,
-                              ),
+                              child: myPicture != null
+                                  ? Image.network(
+                                      myPicture!,
+                                      height: 150,
+                                      width: 150,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : CircularProgressIndicator(),
                             ),
                           ),
                           SizedBox(

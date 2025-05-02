@@ -70,11 +70,11 @@ class _HomePageState extends State<HomePage> {
                     DocumentSnapshot ds = snapshot.data.docs[index];
                     print("------------------->>>>> inside chtroomlist");
                     print(
-                        "chatroomlist============>>>>${ds["lastMessage"]}------${ds["lastMessageSendTs"]}");
+                        "chatroomlist=======${snapshot.data.docs.length}=====>>>>${ds["lastMessage"]}------${ds["lastMessageSendTs"]}");
                     return ChatRoomListTile(
                       chatroomId: ds.id,
                       lastMessage: ds["lastMessage"],
-                      myUserName: myUserName!,
+                      myUserName: myUserName != null ? myUserName! : "",
                       time: ds["lastMessageSendTs"],
                     );
                   })
@@ -366,7 +366,9 @@ class _ChatRoomListTileState extends State<ChatRoomListTile> {
   getThisUserInfo() async {
     userName =
         widget.chatroomId.replaceAll("_", "").replaceAll(widget.myUserName, "");
-    QuerySnapshot querySnapshot = await DataBasemethods().getUserInfo(userName);
+    print("username to find -------<><><><><><><><>${userName}");
+    QuerySnapshot querySnapshot =
+        await DataBasemethods().getUserInfo(userName.toUpperCase());
     name = "${querySnapshot.docs[0]["Name"]}";
     profilePicUrl = "${querySnapshot.docs[0]["Image"]}";
     id = "${querySnapshot.docs[0]["Id"]}";
@@ -382,6 +384,7 @@ class _ChatRoomListTileState extends State<ChatRoomListTile> {
 
   @override
   Widget build(BuildContext context) {
+    print("chatroomlist tile data------------->>>");
     return GestureDetector(
         onTap: () {
           Navigator.push(
