@@ -54,6 +54,8 @@ dependencies:
   supabase_flutter: ^1.10.5  # Check for latest version on pub.dev
   uuid: ^4.1.0
   path: ^1.8.3
+  dio: ^5.8.0+1
+  record: ^6.0.0
 
 dev_dependencies:
   flutter_test:

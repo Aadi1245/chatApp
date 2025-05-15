@@ -1,8 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:chattest/Services/database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:random_string/random_string.dart';
+import 'package:record/record.dart';
 
 import '../../../Services/shared_pref.dart';
 
@@ -14,6 +24,13 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
 
   String? myUserName, myName, myEmail, myPicture, chatRoomId, messageId;
   Stream? messageStream;
+  String apiKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91aWlpYm54cWlvZWR2bHdmYndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjgyNDksImV4cCI6MjA2MjcwNDI0OX0.aEDqtb7nzWayG0XnyE_I7etCe84c2fK5oKWKLb4FKSw';
+  String authorization =
+      'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91aWlpYm54cWlvZWR2bHdmYndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjgyNDksImV4cCI6MjA2MjcwNDI0OX0.aEDqtb7nzWayG0XnyE_I7etCe84c2fK5oKWKLb4FKSw';
+  String baseUrl =
+      "https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/public/";
+  String mainUrl = "";
   ChatblocBloc({
     required this.name,
     required this.profileUrl,
@@ -48,5 +65,146 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
       emit(ChatBlocLoadedState());
     }
     print("${messageStream!.first}chat page after ===========");
+  }
+
+  Future<void> uploadImage(BuildContext context, String myUserName,
+      String myPicture, String chatRoomId, File selectedImage) async {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(
+          "Your image is uploading please wait...",
+          style: TextStyle(fontSize: 20),
+        )));
+
+    try {
+      String addId = randomAlphaNumeric(5);
+
+      var headers = {
+        'apikey': apiKey,
+        'Authorization': authorization,
+        'Content-Type': 'image/jpeg'
+      };
+      var data = FormData.fromMap({
+        'files': [await MultipartFile.fromFile(selectedImage.path)],
+      });
+
+      print("data that is provided <><><><><><> ${data}");
+
+      var dio = Dio();
+      var response = await dio.request(
+        'https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/my-storage/${myUserName}/${myUserName}${addId}.jpg',
+        options: Options(
+          method: 'POST',
+          headers: headers,
+        ),
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        print("-----response data-------${json.encode(response.data["Key"])}");
+        mainUrl = json.encode(response.data["Key"]).replaceAll('"', '');
+      } else {
+        print("----------Api Failed-------${response.statusMessage}");
+      }
+      // Reference firebaseStorageRef =
+      //     FirebaseStorage.instance.ref().child("blogImage").child(addId);
+      // final UploadTask task = firebaseStorageRef.putFile(selectedImage!);
+
+      var downloadUrl = baseUrl + mainUrl;
+      print("downloaded url -------->>>>${downloadUrl}");
+      DateTime now = DateTime.now();
+      String formattedDate = DateFormat("h:mma").format(now);
+      Map<String, dynamic> messageInfoMap = {
+        "Data": "Image",
+        "message": downloadUrl,
+        "sendBy": myUserName, // myUserName,
+        "ts": formattedDate,
+        "time": FieldValue.serverTimestamp(),
+        "imgurl": myPicture //myPicture
+      };
+      messageId = randomAlphaNumeric(10);
+      await DataBasemethods()
+          .addMessage(chatRoomId, messageId!, messageInfoMap)
+          .then((value) {
+        Map<String, dynamic> lastMessageInfoMap = {
+          "lastMessage": "Image",
+          "lastMessageSendBy": myUserName,
+          "lastMessageSendTs": formattedDate,
+          "time": FieldValue.serverTimestamp()
+        };
+        DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
+      });
+    } catch (e) {
+      print("Image throw excetion====>>${e}");
+    }
+  }
+
+  Future<void> uploadAudio(String filePath) async {
+    String addId = randomAlphaNumeric(5);
+    final fileName =
+        filePath.split('/').last; // Extracts 'audio_1747323250106.aac'
+    final destinationPath = 'user_$addId/$fileName';
+
+    final url =
+        'https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/my-storage/$destinationPath';
+
+    // Initialize Dio
+    final dio = Dio();
+
+    try {
+      // Create FormData for the file upload
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      // Make the POST request
+      final response = await dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'apikey': apiKey,
+            'Authorization': authorization,
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print('Upload response: ${response.data}');
+        // Construct the public URL
+        final publicUrl =
+            'https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/my-storage/$destinationPath';
+
+        DateTime now = DateTime.now();
+        String formattedDate = DateFormat("h:mma").format(now);
+        Map<String, dynamic> messageInfoMap = {
+          "Data": "Audio",
+          "message": publicUrl,
+          "sendBy": myUserName,
+          "ts": formattedDate,
+          "time": FieldValue.serverTimestamp(),
+          "imgurl": myPicture
+        };
+        messageId = randomAlphaNumeric(10);
+        await DataBasemethods()
+            .addMessage(chatRoomId!, messageId!, messageInfoMap)
+            .then((value) {
+          Map<String, dynamic> lastMessageInfoMap = {
+            "lastMessage": "Audio",
+            "lastMessageSendBy": myUserName,
+            "lastMessageSendTs": formattedDate,
+            "time": FieldValue.serverTimestamp()
+          };
+          DataBasemethods()
+              .updateLastMessageSent(chatRoomId!, lastMessageInfoMap);
+        });
+      } else {
+        print('Failed to upload: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error uploading audio: $e');
+      return null;
+    }
   }
 }
