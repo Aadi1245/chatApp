@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -161,7 +162,9 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _audioRecorder.dispose();
     _player!.stopPlayer();
-    _player!.closePlayer();
+    _progressSubscription?.cancel();
+    _player?.closePlayer();
+
     _player = null;
     super.dispose();
   }
@@ -279,6 +282,7 @@ class _ChatPageState extends State<ChatPage> {
                             Expanded(
                               // height: MediaQuery.of(context).size.height * 0.78,
                               child: chatMessage(
+                                  widget.profileUrl,
                                   BlocProvider.of<ChatblocBloc>(context)
                                       .messageStream!),
                             ),
@@ -435,7 +439,7 @@ class _ChatPageState extends State<ChatPage> {
 
   // Stream? messageStream;
 
-  Widget chatMessage(Stream messageStream) {
+  Widget chatMessage(String friendPic, Stream messageStream) {
     return StreamBuilder(
         stream: messageStream,
         builder: (context, AsyncSnapshot snapshot) {
@@ -447,8 +451,12 @@ class _ChatPageState extends State<ChatPage> {
                   itemBuilder: (context, index) {
                     DocumentSnapshot ds = snapshot.data.docs[index];
                     print(
-                        "chat messages-${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
+                        "chat messages-sdf${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
                     return chatMessageTile(
+                        BlocProvider.of<ChatblocBloc>(context).myUserName ==
+                                ds["sendBy"]
+                            ? BlocProvider.of<ChatblocBloc>(context).myPicture!
+                            : friendPic,
                         ds["message"],
                         BlocProvider.of<ChatblocBloc>(context).myUserName ==
                             ds["sendBy"],
@@ -467,14 +475,23 @@ class _ChatPageState extends State<ChatPage> {
   //   setState(() {});
   // }
 
-  Widget chatMessageTile(String message, bool sendByMe, String Data) {
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  StreamSubscription? _progressSubscription;
+
+  Widget chatMessageTile(
+      String senderProfilePic, String message, bool sendByMe, String Data) {
     return Row(
       mainAxisAlignment:
           sendByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
         Flexible(
             child: Container(
-          padding: Data == "Image" ? EdgeInsets.all(5) : EdgeInsets.all(12),
+          padding: Data == "Image"
+              ? EdgeInsets.all(5)
+              : Data == "Audio"
+                  ? EdgeInsets.all(5)
+                  : EdgeInsets.all(12),
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.only(
@@ -499,48 +516,76 @@ class _ChatPageState extends State<ChatPage> {
                 )
               : Data == "Audio"
                   ? Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        // color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          audioProfileWithMic(senderProfilePic),
                           IconButton(
                             icon: Icon(
-                              _isPlaying ? Icons.pause : Icons.play_arrow,
+                              size: 35,
+                              _isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
                               color: Colors.blue,
                             ),
                             onPressed: () async {
                               if (_isPlaying) {
                                 await _player!.stopPlayer();
-                                setState(() => _isPlaying = false);
+                                await _progressSubscription?.cancel();
+                                setState(() {
+                                  _isPlaying = false;
+                                  _position = Duration.zero;
+                                  _duration = Duration.zero;
+                                });
                               } else {
                                 await _player!.startPlayer(
                                   fromURI: message,
                                   // codec: Codec.aacADTS,
-                                  whenFinished: () {
-                                    setState(() => _isPlaying = false);
+                                  whenFinished: () async {
+                                    await _progressSubscription?.cancel();
+                                    setState(() {
+                                      _isPlaying = false;
+                                      _position = Duration.zero;
+                                      _duration = Duration.zero;
+                                    });
                                   },
                                 );
-                                setState(() => _isPlaying = true);
+
+                                _progressSubscription =
+                                    _player!.onProgress!.listen((event) {
+                                  if (event != null && mounted) {
+                                    setState(() {
+                                      _position = event.position;
+                                      _duration = event.duration;
+
+                                      print(
+                                          "time------------->>>>>${_duration.inMilliseconds}");
+                                    });
+                                  }
+                                });
+
+                                setState(() {
+                                  _isPlaying = true;
+                                });
                               }
                             },
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
-                            child: LinearProgressIndicator(
-                              value:
-                                  0.5, // Placeholder for waveform or progress
-                              backgroundColor: Colors.grey,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.blue),
-                            ),
-                          ),
+                          Expanded(
+                              child: LinearProgressIndicator(
+                            value: (_duration.inMilliseconds == 0)
+                                ? 0
+                                : _position.inMilliseconds /
+                                    _duration.inMilliseconds,
+                            backgroundColor: Colors.grey,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.blue),
+                          )),
+                          const SizedBox(width: 8),
                         ],
                       ),
                     )
@@ -552,6 +597,41 @@ class _ChatPageState extends State<ChatPage> {
                           color: Colors.black),
                     ),
         ))
+      ],
+    );
+  }
+
+  Widget audioProfileWithMic(String imageUrl) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(25), // half of 50 for circle
+          child: Image.network(
+            imageUrl,
+            height: 50,
+            width: 50,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 35,
+          left: 35,
+          bottom: 0,
+          right: 0,
+          // child: Container(
+          //   height: 20,
+          //   width: 20,
+          //   decoration: BoxDecoration(
+          //     shape: BoxShape.circle,
+          //     color: Colors.black.withOpacity(0.6),
+          //   ),
+          child: Icon(
+            Icons.mic,
+            size: 18,
+            color: Colors.grey,
+          ),
+          // ),
+        ),
       ],
     );
   }

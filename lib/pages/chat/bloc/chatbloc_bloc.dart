@@ -143,7 +143,7 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
     String addId = randomAlphaNumeric(5);
     final fileName =
         filePath.split('/').last; // Extracts 'audio_1747323250106.aac'
-    final destinationPath = 'user_$addId/$fileName';
+    final destinationPath = 'user1/$fileName';
 
     final url =
         'https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/my-storage/$destinationPath';

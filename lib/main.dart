@@ -1,6 +1,6 @@
 // import 'package:chattest/dash_chat_2.dart';
 // import 'package:chattest/pages/home.dart';
-import 'package:chattest/pages/chat/bloc/chat_page.dart';
+import 'package:chattest/pages/chat/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/starter/onboarding.dart';
 import 'package:chattest/pages/profile.dart';
