@@ -11,12 +11,54 @@ class DataBasemethods {
 
   Future addMessage(String chatRoomId, String messageId,
       Map<String, dynamic> messageInfoMap) async {
+    print("message Id -----<><><><><><><><>>>${messageId}");
     return await FirebaseFirestore.instance
         .collection("chatRoom")
         .doc(chatRoomId)
         .collection("chat")
         .doc(messageId)
         .set(messageInfoMap);
+  }
+
+  Future deleteMessage(String chatRoomId, String messageId) async {
+    return await FirebaseFirestore.instance
+        .collection("chatRoom")
+        .doc(chatRoomId)
+        .collection("chat")
+        .doc(messageId)
+        .delete();
+  }
+
+  Future<void> deleteAllMessages(String chatRoomId) async {
+    final batch = FirebaseFirestore.instance.batch();
+
+    QuerySnapshot messagesSnapshot = await FirebaseFirestore.instance
+        .collection("chatRoom")
+        .doc(chatRoomId)
+        .collection("chat")
+        .get();
+
+    for (var doc in messagesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+  }
+
+  Future<void> deleteSelectedMessages(
+      String chatRoomId, List<String> messageIds) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
+    for (String messageId in messageIds) {
+      DocumentReference messageRef = FirebaseFirestore.instance
+          .collection("chatRoom")
+          .doc(chatRoomId)
+          .collection("chat")
+          .doc(messageId);
+      batch.delete(messageRef);
+    }
+
+    await batch.commit();
   }
 
   updateLastMessageSent(
@@ -59,6 +101,14 @@ class DataBasemethods {
         .collection("chat")
         .orderBy("time", descending: true)
         .snapshots();
+  }
+
+  Future<void> deleteChatRoom(String chatRoomId) async {
+    // await deleteAllMessages(chatRoomId);
+    await FirebaseFirestore.instance
+        .collection("chatRoom")
+        .doc(chatRoomId)
+        .delete();
   }
 
   Future<QuerySnapshot> getUserInfo(String userName) async {
