@@ -1,11 +1,13 @@
 // import 'package:chattest/dash_chat_2.dart';
 // import 'package:chattest/pages/home.dart';
+import 'package:chattest/Services/firebase_message.dart';
 import 'package:chattest/pages/chat/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/starter/onboarding.dart';
 import 'package:chattest/pages/profile.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // import 'package:chattest/pages/onboarding.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,8 @@ void main() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.playIntegrity,
   );
+
+  // await FirebaseMessage().initNotification();
 
   await Supabase.initialize(
     url: 'https://ouiiibnxqioedvlwfbwl.supabase.co',

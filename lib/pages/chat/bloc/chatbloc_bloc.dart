@@ -36,6 +36,21 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
     required this.profileUrl,
     required this.userName,
   }) : super(ChatblocInitial()) {
+    on<deleteSelectedMsg>((event, State) async {
+      // emit(ChatBlocLoadingState());
+      await DataBasemethods()
+          .deleteSelectedMessages(chatRoomId!, event.messageIds!);
+      emit(ChatBlocLoadedState());
+    });
+
+    on<ClearChat>(
+      (event, emit) async {
+        emit(ChatBlocLoadingState());
+        await DataBasemethods().deleteAllMessages(chatRoomId!);
+        emit(ChatBlocLoadedState());
+      },
+    );
+
     getTheSharedpreferenceData();
   }
 

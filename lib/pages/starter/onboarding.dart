@@ -3,6 +3,7 @@ import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/starter/bloc/onboarding_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -15,6 +16,28 @@ class Onbpoarding extends StatefulWidget {
 }
 
 class _OnbpoardingState extends State<Onbpoarding> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    requestPermission();
+    super.initState();
+  }
+
+  void requestPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    print('User granted permission: ${settings.authorizationStatus}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

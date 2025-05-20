@@ -11,6 +11,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_sound/public/flutter_sound_player.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:giphy_get/giphy_get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -174,12 +176,13 @@ class _ChatPageState extends State<ChatPage> {
     return "${users[0]}_${users[1]}";
   }
 
-  // deleteSelectedMessage(String chatRoomId,List<String> messageIds)async{
+  deleteSelectedMessage(String chatRoomId, List<String> messageIds) async {
+    await DataBasemethods().deleteSelectedMessages(chatRoomId, messageIds);
+  }
 
-  // }
-
-  addMessage(bool sendClicked, String myUserName, String myPicture,
-      String chatRoomId) async {
+  addMessage(
+      bool sendClicked, String myUserName, String myPicture, String chatRoomId,
+      {String? gifUrl}) async {
     if (messageController.text != "") {
       String message = messageController.text;
       messageController.text = "";
@@ -188,7 +191,7 @@ class _ChatPageState extends State<ChatPage> {
 
       Map<String, dynamic> messageInfoMap = {
         "Data": "message",
-        "message": message,
+        "message": gifUrl != null ? message : gifUrl,
         "sendBy": myUserName,
         "ts": formatedDate,
         "time": FieldValue.serverTimestamp(),
@@ -200,7 +203,7 @@ class _ChatPageState extends State<ChatPage> {
           .addMessage(chatRoomId, messageId!, messageInfoMap)
           .then((value) {
         Map<String, dynamic> lastMessageInfoMap = {
-          "lastMessage": message,
+          "lastMessage": gifUrl != null ? message : gifUrl,
           "lastMessageSendBy": myUserName,
           "lastMessageSendTs": formatedDate,
           "time": FieldValue.serverTimestamp()
@@ -214,6 +217,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  bool mic = true, _isRecording = false;
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -224,13 +228,18 @@ class _ChatPageState extends State<ChatPage> {
         child:
             BlocBuilder<ChatblocBloc, ChatblocState>(builder: (context, State) {
           if (State is ChatBlocLoadingState) {
-            return Center(
-              child: CircularProgressIndicator(),
+            return Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
             );
           } else if (State is ChatBlocFailedState) {
-            return Center(
-              child: Text("Something went wrong!"),
-            );
+            return Scaffold(
+                backgroundColor: Colors.white,
+                body: Center(
+                  child: Text("Something went wrong!"),
+                ));
           } else {
             return Scaffold(
                 backgroundColor: Colors.blueGrey,
@@ -258,17 +267,39 @@ class _ChatPageState extends State<ChatPage> {
                       onSelected: (String value) {
                         // Handle menu item click here
                         print("Selected: $value");
+                        if (value == "Delete") {
+                          if (messageIds.isNotEmpty) {
+                            BlocProvider.of<ChatblocBloc>(context)
+                                .add(deleteSelectedMsg(messageIds));
+
+                            Fluttertoast.showToast(
+                              msg: "Message deleted successfully",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.TOP,
+                              backgroundColor: Colors.green,
+                              textColor: Colors.white,
+                              fontSize: 12.0,
+                            );
+                          }
+                        }
+                        if (value == "Clear All Chat") {
+                          BlocProvider.of<ChatblocBloc>(context)
+                              .add(ClearChat());
+                        }
                       },
                       itemBuilder: (BuildContext context) {
                         return [
                           PopupMenuItem(
                             value: "Delete",
-                            child: Text("Delete"),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [Text("Delete"), Icon(Icons.delete)],
+                            ),
                           ),
-                          PopupMenuItem(
-                            value: "Clear Chat",
-                            child: Text("Clear Chat"),
-                          ),
+                          // PopupMenuItem(
+                          //   value: "Clear All Chat",
+                          //   child: Text("Clear All Chat"),
+                          // ),
                           // PopupMenuItem(
                           //   value: "Mute",
                           //   child: Text("Mute"),
@@ -335,59 +366,22 @@ class _ChatPageState extends State<ChatPage> {
                                     BlocProvider.of<ChatblocBloc>(context)
                                         .messageStream!),
                               ),
+                              Visibility(
+                                visible: _isRecording,
+                                child: Image.asset(
+                                  'assets/images/audio_gif2.gif',
+                                  height: 80,
+                                ),
+                              ),
+
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  // Microphone button
-                                  Container(
-                                    margin: EdgeInsets.only(bottom: 6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.blueGrey,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: GestureDetector(
-                                      child: Icon(
-                                          size: 45,
-                                          Icons.mic,
-                                          color: Colors.white),
-                                      onLongPress: _permissionGranted
-                                          ? () async {
-                                              await _audioRecorder
-                                                  .startRecording();
-                                              setState(() {});
-                                            }
-                                          : null,
-                                      onLongPressEnd: _permissionGranted
-                                          ? (_) async {
-                                              final filePath =
-                                                  await _audioRecorder
-                                                      .stopRecording();
-                                              if (filePath != null) {
-                                                print(
-                                                    "object---------->>>${filePath}");
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .uploadAudio(filePath);
-                                              }
-                                              setState(() {});
-                                            }
-                                          : null,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-
                                   // Text field with attachment icon
                                   Expanded(
                                     child: Container(
                                       padding:
-                                          EdgeInsets.symmetric(horizontal: 12),
+                                          EdgeInsets.symmetric(horizontal: 10),
                                       margin: EdgeInsets.only(bottom: 6),
                                       decoration: BoxDecoration(
                                         color: Color(0xFFE0F2F1),
@@ -402,8 +396,57 @@ class _ChatPageState extends State<ChatPage> {
                                       ),
                                       child: Row(
                                         children: [
+                                          IconButton(
+                                            icon: Icon(Icons.gif,
+                                                color: Colors.blue, size: 30),
+                                            onPressed: () async {
+                                              GiphyGif? gif =
+                                                  await GiphyGet.getGif(
+                                                context: context,
+                                                apiKey: "YOUR_GIPHY_API_KEY",
+                                                lang: GiphyLanguage.english,
+                                                randomID: "chat_user",
+                                                tabColor: Colors.blue,
+                                              );
+
+                                              if (gif != null) {
+                                                String gifUrl =
+                                                    gif.images?.original?.url ??
+                                                        gif.images?.previewWebp
+                                                            ?.url ??
+                                                        '';
+                                                if (gifUrl.isNotEmpty) {
+                                                  // Now send this URL in chat as a gif message
+                                                  addMessage(
+                                                      true,
+                                                      BlocProvider.of<
+                                                                  ChatblocBloc>(
+                                                              context)
+                                                          .myUserName!,
+                                                      BlocProvider.of<
+                                                                  ChatblocBloc>(
+                                                              context)
+                                                          .myPicture!,
+                                                      BlocProvider.of<
+                                                                  ChatblocBloc>(
+                                                              context)
+                                                          .chatRoomId!,
+                                                      gifUrl: gifUrl);
+                                                }
+                                              }
+                                            },
+                                          ),
                                           Expanded(
                                             child: TextField(
+                                              onChanged: (value) {
+                                                if (value.trim().isNotEmpty) {
+                                                  mic = false;
+                                                } else {
+                                                  mic = true;
+                                                }
+
+                                                setState(() {});
+                                              },
                                               controller: messageController,
                                               decoration: InputDecoration(
                                                 hintText: "Type a message...",
@@ -460,21 +503,74 @@ class _ChatPageState extends State<ChatPage> {
                                         ),
                                       ],
                                     ),
-                                    child: IconButton(
-                                      icon:
-                                          Icon(Icons.send, color: Colors.white),
-                                      onPressed: () {
-                                        addMessage(
-                                            true,
-                                            BlocProvider.of<ChatblocBloc>(
-                                                    context)
-                                                .myUserName!,
-                                            BlocProvider.of<ChatblocBloc>(
-                                                    context)
-                                                .myPicture!,
-                                            BlocProvider.of<ChatblocBloc>(
-                                                    context)
-                                                .chatRoomId!);
+                                    child: GestureDetector(
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                            size: 30,
+                                            mic
+                                                ? Icons.mic_outlined
+                                                : Icons.send_rounded,
+                                            color: Colors.white),
+                                      ),
+                                      onLongPress: _permissionGranted
+                                          ? () async {
+                                              if (mic) {
+                                                setState(() {
+                                                  _isRecording = true;
+                                                });
+                                                await _audioRecorder
+                                                    .startRecording();
+                                              }
+                                            }
+                                          : null,
+                                      onLongPressEnd: _permissionGranted
+                                          ? (_) async {
+                                              if (mic) {
+                                                setState(() {
+                                                  _isRecording = false;
+                                                });
+                                                final filePath =
+                                                    await _audioRecorder
+                                                        .stopRecording();
+                                                if (filePath != null) {
+                                                  print(
+                                                      "object---------->>>${filePath}");
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .uploadAudio(filePath);
+                                                }
+                                              }
+                                            }
+                                          : null,
+                                      onTap: () {
+                                        if (messageController.text
+                                            .trim()
+                                            .isNotEmpty) {
+                                          addMessage(
+                                              true,
+                                              BlocProvider.of<ChatblocBloc>(
+                                                      context)
+                                                  .myUserName!,
+                                              BlocProvider.of<ChatblocBloc>(
+                                                      context)
+                                                  .myPicture!,
+                                              BlocProvider.of<ChatblocBloc>(
+                                                      context)
+                                                  .chatRoomId!);
+
+                                          mic = true;
+                                        } else {
+                                          messageController.text = "";
+                                          Fluttertoast.showToast(
+                                            msg: "Text should not be empty",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.TOP,
+                                            backgroundColor: Colors.red,
+                                            textColor: Colors.white,
+                                            fontSize: 12.0,
+                                          );
+                                        }
                                       },
                                     ),
                                   ),
@@ -514,7 +610,21 @@ class _ChatPageState extends State<ChatPage> {
                             messageIds.removeWhere((item) => item == ds.id);
                             setState(() {});
                           } else {
-                            messageIds.add(ds.id);
+                            if (BlocProvider.of<ChatblocBloc>(context)
+                                    .myUserName ==
+                                ds["sendBy"]) {
+                              messageIds.add(ds.id);
+                            } else {
+                              Fluttertoast.showToast(
+                                msg:
+                                    "You don't have permission to modify this message.",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.TOP,
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                                fontSize: 12.0,
+                              );
+                            }
                             setState(() {});
                           }
                         }
@@ -524,7 +634,21 @@ class _ChatPageState extends State<ChatPage> {
                           messageIds.removeWhere((item) => item == ds.id);
                           setState(() {});
                         } else {
-                          messageIds.add(ds.id);
+                          if (BlocProvider.of<ChatblocBloc>(context)
+                                  .myUserName ==
+                              ds["sendBy"]) {
+                            messageIds.add(ds.id);
+                          } else {
+                            Fluttertoast.showToast(
+                              msg:
+                                  "You don't have permission to modify this message.",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.TOP,
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                              fontSize: 12.0,
+                            );
+                          }
                           setState(() {});
                         }
                       },

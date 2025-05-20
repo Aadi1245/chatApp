@@ -57,7 +57,7 @@ class DataBasemethods {
           .doc(messageId);
       batch.delete(messageRef);
     }
-
+    print("Message deleted successfully--------->>>>");
     await batch.commit();
   }
 
