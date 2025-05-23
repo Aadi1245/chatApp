@@ -59,6 +59,9 @@ dependencies:
   fluttertoast: ^8.2.2 
   firebase_messaging: ^15.2.5
   giphy_get: ^3.0.2
+  googleapis_auth: ^2.0.0
+  app_settings: ^6.1.1
+  flutter_local_notifications: ^19.2.1
 
 dev_dependencies:
   flutter_test:

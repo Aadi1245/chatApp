@@ -1,4 +1,5 @@
 import 'package:chattest/Services/database.dart';
+import 'package:chattest/Services/notification_services.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,6 +14,27 @@ class Authmethods {
 
   getCurrenUser() async {
     return await auth.currentUser;
+  }
+
+  Future<Map<String, dynamic>?> getUserByUsername(String username) async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('user')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // Return user data as a Map
+        return snapshot.docs.first.data() as Map<String, dynamic>;
+      } else {
+        print("---------------------- User not found ----------------------");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching user: ------------->>>> $e");
+      return null;
+    }
   }
 
   signInWithGoogle(BuildContext context) async {
@@ -38,12 +60,15 @@ class Authmethods {
     String userName = userDetails!.email!.replaceAll("@gmail.com", "");
     String firstletter = userName.substring(0, 1).toUpperCase();
 
+    NotificationServices notificationServices = NotificationServices();
     await SharedPreferenceHelper()
         .saveUserDisplayName(userDetails.displayName!);
     await SharedPreferenceHelper().saveUserEmail(userDetails.email!);
     await SharedPreferenceHelper().saveUserId(userDetails.uid);
     await SharedPreferenceHelper().saveUserImage(userDetails.photoURL!);
     await SharedPreferenceHelper().saveUserName(userName);
+    await SharedPreferenceHelper()
+        .saveAccessToken(await notificationServices.getDeviceToken());
 
     if (result != null) {
       Map<String, dynamic> userInfoMap = {
@@ -52,7 +77,8 @@ class Authmethods {
         "Image": userDetails.photoURL,
         "Id": userDetails.uid,
         "username": userName.toUpperCase(),
-        "SearchKey": firstletter
+        "SearchKey": firstletter,
+        "accessToken": await notificationServices.getDeviceToken()
       };
 
       await DataBasemethods().addUser(userInfoMap, userDetails.uid);

@@ -9,6 +9,30 @@ class DataBasemethods {
         .set(userInfoMap);
   }
 
+  Future<String?> getUserFcmToken(String username) async {
+    print("User name searching-------->>>${username}");
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('user')
+          .where('username', isEqualTo: username.toUpperCase())
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // Return user data as a Map
+        print("snapshot docs-------->>>${snapshot.docs.first.data()}");
+        Map<String, dynamic> userDetails =
+            snapshot.docs.first.data() as Map<String, dynamic>;
+        return userDetails["accessToken"];
+      } else {
+        print("---------------------- User not found ----------------------");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching user: ------------->>>> $e");
+      return null;
+    }
+  }
+
   Future addMessage(String chatRoomId, String messageId,
       Map<String, dynamic> messageInfoMap) async {
     print("message Id -----<><><><><><><><>>>${messageId}");

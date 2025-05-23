@@ -1,4 +1,6 @@
 import 'package:chattest/Services/auth.dart';
+import 'package:chattest/Services/fcm_service.dart';
+import 'package:chattest/Services/notification_services.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/starter/bloc/onboarding_bloc.dart';
@@ -19,23 +21,12 @@ class _OnbpoardingState extends State<Onbpoarding> {
   @override
   void initState() {
     // TODO: implement initState
-    requestPermission();
+    NotificationServices().getNotificationPermission();
+    NotificationServices().getDeviceToken();
+    FcmService.firebaseInit();
+    NotificationServices().firebaseInit(context);
+    NotificationServices().setupInteractMessage(context);
     super.initState();
-  }
-
-  void requestPermission() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    NotificationSettings settings = await messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-
-    print('User granted permission: ${settings.authorizationStatus}');
   }
 
   @override

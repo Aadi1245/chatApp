@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chattest/Services/database.dart';
+import 'package:chattest/Services/sendNotificationService.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/chat/audio_record.dart';
 import 'package:chattest/pages/chat/bloc/chatbloc_bloc.dart';
@@ -20,6 +21,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:random_string/random_string.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:record/record.dart';
+import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
+
+import 'bloc/gif_keyboard_input.dart';
 
 class ChatPage extends StatefulWidget {
   String userName, profileUrl, name;
@@ -42,62 +47,12 @@ class _ChatPageState extends State<ChatPage> {
   TextEditingController messageController = TextEditingController();
 
   bool isRecording = false;
-  String? _filePah;
-  // FlutterSoundRecorder _recorder = FlutterSoundRecorder();
 
   late AudioRecord _audioRecorder;
   bool _permissionGranted = false;
 
-  Future<String> _getFilePath() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return '${dir.path}/recorded_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-  }
-
   FlutterSoundPlayer? _player;
   bool _isPlaying = false;
-
-  Future<void> _uploadFile(
-      String myUserName, String myPicture, String chatRoomId) async {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(
-          "Your audio is uploading please wait...",
-          style: TextStyle(fontSize: 20),
-        )));
-
-    File file = File(_filePah!);
-
-    try {
-      // TaskSnapshot snapshot =
-      //     await FirebaseStorage.instance.ref("uploads/audio.aac").putFile(file);
-      // String downloadUrl = "await snapshot.ref.getDownloadURL()";
-
-      // DateTime now = DateTime.now();
-      // String formattedDate = DateFormat("h:mma").format(now);
-      // Map<String, dynamic> messageInfoMap = {
-      //   "Data": "Audio",
-      //   "message": downloadUrl,
-      //   "sendBy": myUserName,
-      //   "ts": formattedDate,
-      //   "time": FieldValue.serverTimestamp(),
-      //   "imgurl": myPicture
-      // };
-      // messageId = randomAlphaNumeric(10);
-      // await DataBasemethods()
-      //     .addMessage(chatRoomId, messageId!, messageInfoMap)
-      //     .then((value) {
-      //   Map<String, dynamic> lastMessageInfoMap = {
-      //     "lastMessage": "Audio",
-      //     "lastMessageSendBy": myUserName,
-      //     "lastMessageSendTs": formattedDate,
-      //     "time": FieldValue.serverTimestamp()
-      //   };
-      //   DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
-      // });
-    } catch (e) {
-      print("audio throw excetion====${e}");
-    }
-  }
 
   onLoad() async {
     // await getTheSharedpreferenceData();
@@ -132,6 +87,7 @@ class _ChatPageState extends State<ChatPage> {
     _initPlayer();
     _audioRecorder = AudioRecord();
     _initRecorder();
+    GifKeyboardInput.startListening();
     super.initState();
   }
 
@@ -181,8 +137,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   addMessage(
-      bool sendClicked, String myUserName, String myPicture, String chatRoomId,
-      {String? gifUrl}) async {
+      {bool? sendClicked,
+      String? myUserName,
+      String? myPicture,
+      String? chatRoomId,
+      String? fcmToken,
+      String? gifUrl}) async {
     if (messageController.text != "") {
       String message = messageController.text;
       messageController.text = "";
@@ -191,26 +151,40 @@ class _ChatPageState extends State<ChatPage> {
 
       Map<String, dynamic> messageInfoMap = {
         "Data": "message",
-        "message": gifUrl != null ? message : gifUrl,
+        "isPlaying": false,
+        "message": gifUrl == null ? message : gifUrl,
         "sendBy": myUserName,
         "ts": formatedDate,
         "time": FieldValue.serverTimestamp(),
-        "imgUrl": myPicture
+        "imgUrl": myPicture,
+        "fcmToken": fcmToken
       };
+
+      receiverFcmToken =
+          await DataBasemethods().getUserFcmToken(widget.userName);
+      print(" receiverFcmToken ------------>>>>>>> ${receiverFcmToken}");
+      receiverFcmToken != null
+          ? Sendnotificationservice.sendNotificationWithApi(
+              token: receiverFcmToken,
+              title: myUserName,
+              body: message,
+              data1: {"screen": "chatPage"})
+          : "";
+
       messageId = randomAlphaNumeric(10);
 
       await DataBasemethods()
-          .addMessage(chatRoomId, messageId!, messageInfoMap)
+          .addMessage(chatRoomId!, messageId!, messageInfoMap)
           .then((value) {
         Map<String, dynamic> lastMessageInfoMap = {
-          "lastMessage": gifUrl != null ? message : gifUrl,
+          "lastMessage": gifUrl == null ? message : gifUrl,
           "lastMessageSendBy": myUserName,
           "lastMessageSendTs": formatedDate,
           "time": FieldValue.serverTimestamp()
         };
         DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
 
-        if (sendClicked) {
+        if (sendClicked!) {
           message = "";
         }
       });
@@ -312,40 +286,8 @@ class _ChatPageState extends State<ChatPage> {
                   ],
                 ),
                 body: Container(
-                  // margin: EdgeInsets.only(
-                  //   top: 35,
-                  // ),
                   child: Column(
                     children: [
-                      // Row(
-                      //   children: [
-                      //     SizedBox(
-                      //       width: 10,
-                      //     ),
-                      //     GestureDetector(
-                      //         onTap: () {
-                      //           Navigator.of(context).pop();
-                      //         },
-                      //         child: Icon(
-                      //           Icons.arrow_back,
-                      //           color: Colors.white,
-                      //         )),
-                      //     SizedBox(
-                      //       width: MediaQuery.of(context).size.width * 0.25,
-                      //     ),
-                      // Text(
-                      //   widget.name,
-                      //   textAlign: TextAlign.center,
-                      //   style: TextStyle(
-                      //       fontSize: 20,
-                      //       fontWeight: FontWeight.bold,
-                      //       color: Colors.white),
-                      // ),
-                      //   ],
-                      // ),
-                      // SizedBox(
-                      //   height: 20,
-                      // ),
                       Expanded(
                         child: Container(
                           padding: EdgeInsets.only(left: 5, right: 5),
@@ -356,15 +298,14 @@ class _ChatPageState extends State<ChatPage> {
                                   topLeft: Radius.circular(30))),
                           child: Column(
                             children: [
-                              // SizedBox(
-                              //   height: 30,
-                              // ),
                               Expanded(
                                 // height: MediaQuery.of(context).size.height * 0.78,
                                 child: chatMessage(
                                     widget.profileUrl,
                                     BlocProvider.of<ChatblocBloc>(context)
-                                        .messageStream!),
+                                        .messageStream!,
+                                    BlocProvider.of<ChatblocBloc>(context)
+                                        .myUserName!),
                               ),
                               Visibility(
                                 visible: _isRecording,
@@ -373,7 +314,6 @@ class _ChatPageState extends State<ChatPage> {
                                   height: 80,
                                 ),
                               ),
-
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -398,41 +338,51 @@ class _ChatPageState extends State<ChatPage> {
                                         children: [
                                           IconButton(
                                             icon: Icon(Icons.gif,
-                                                color: Colors.blue, size: 30),
+                                                color: Colors.grey, size: 30),
                                             onPressed: () async {
-                                              GiphyGif? gif =
-                                                  await GiphyGet.getGif(
+                                              final gif = await GiphyGet.getGif(
                                                 context: context,
-                                                apiKey: "YOUR_GIPHY_API_KEY",
+                                                apiKey:
+                                                    "fmRcfcCrA0eJVznbt9epr4pIDLh6isoO", // Replace with your Giphy API Key
                                                 lang: GiphyLanguage.english,
-                                                randomID: "chat_user",
-                                                tabColor: Colors.blue,
+                                                randomID: Uuid().v4(),
+                                                tabColor: Colors.purple,
                                               );
 
                                               if (gif != null) {
-                                                String gifUrl =
-                                                    gif.images?.original?.url ??
-                                                        gif.images?.previewWebp
-                                                            ?.url ??
-                                                        '';
-                                                if (gifUrl.isNotEmpty) {
-                                                  // Now send this URL in chat as a gif message
-                                                  addMessage(
-                                                      true,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .myUserName!,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .myPicture!,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .chatRoomId!,
-                                                      gifUrl: gifUrl);
-                                                }
+                                                // Step 1: Download GIF as File
+                                                final response = await http.get(
+                                                    Uri.parse(gif.images!
+                                                        .original!.url!));
+                                                final tempDir =
+                                                    Directory.systemTemp;
+                                                final filePath =
+                                                    "${tempDir.path}/${const Uuid().v4()}.gif";
+                                                final selectedGifFile =
+                                                    File(filePath);
+                                                await selectedGifFile
+                                                    .writeAsBytes(
+                                                        response.bodyBytes);
+
+                                                print(
+                                                    "File of GIF--------=======>>>> ${selectedGifFile}");
+                                                BlocProvider.of<ChatblocBloc>(
+                                                        context)
+                                                    .uploadGif(
+                                                        BlocProvider.of<
+                                                                    ChatblocBloc>(
+                                                                context)
+                                                            .myUserName!,
+                                                        BlocProvider.of<
+                                                                    ChatblocBloc>(
+                                                                context)
+                                                            .myPicture!,
+                                                        BlocProvider.of<
+                                                                    ChatblocBloc>(
+                                                                context)
+                                                            .chatRoomId!,
+                                                        selectedGifFile,
+                                                        receiverFcmToken!);
                                               }
                                             },
                                           ),
@@ -448,6 +398,11 @@ class _ChatPageState extends State<ChatPage> {
                                                 setState(() {});
                                               },
                                               controller: messageController,
+                                              keyboardType:
+                                                  TextInputType.multiline,
+                                              textInputAction:
+                                                  TextInputAction.newline,
+                                              maxLines: null,
                                               decoration: InputDecoration(
                                                 hintText: "Type a message...",
                                                 border: InputBorder.none,
@@ -547,17 +502,27 @@ class _ChatPageState extends State<ChatPage> {
                                         if (messageController.text
                                             .trim()
                                             .isNotEmpty) {
+                                          print(
+                                              "message sent ----->>>>${messageController.text}");
                                           addMessage(
-                                              true,
-                                              BlocProvider.of<ChatblocBloc>(
-                                                      context)
-                                                  .myUserName!,
-                                              BlocProvider.of<ChatblocBloc>(
-                                                      context)
-                                                  .myPicture!,
-                                              BlocProvider.of<ChatblocBloc>(
-                                                      context)
-                                                  .chatRoomId!);
+                                            sendClicked: true,
+                                            myUserName:
+                                                BlocProvider.of<ChatblocBloc>(
+                                                        context)
+                                                    .myUserName!,
+                                            myPicture:
+                                                BlocProvider.of<ChatblocBloc>(
+                                                        context)
+                                                    .myPicture!,
+                                            chatRoomId:
+                                                BlocProvider.of<ChatblocBloc>(
+                                                        context)
+                                                    .chatRoomId!,
+                                            fcmToken:
+                                                BlocProvider.of<ChatblocBloc>(
+                                                        context)
+                                                    .fcmToken!,
+                                          );
 
                                           mic = true;
                                         } else {
@@ -588,9 +553,11 @@ class _ChatPageState extends State<ChatPage> {
     // );
   }
 
+  String? receiverFcmToken;
   // Stream? messageStream;
   List<String> messageIds = [];
-  Widget chatMessage(String friendPic, Stream messageStream) {
+  Widget chatMessage(
+      String friendPic, Stream messageStream, String myUsername) {
     return StreamBuilder(
         stream: messageStream,
         builder: (context, AsyncSnapshot snapshot) {
@@ -601,8 +568,9 @@ class _ChatPageState extends State<ChatPage> {
                   reverse: true,
                   itemBuilder: (context, index) {
                     DocumentSnapshot ds = snapshot.data.docs[index];
-                    print(
-                        "chat messages-sdf-------1${messageIds}--------${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
+
+                    // print(
+                    //     "chat messages-sdf-------1${messageIds}--------${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
                     return GestureDetector(
                       onTap: () {
                         if (messageIds.isNotEmpty) {
@@ -658,32 +626,25 @@ class _ChatPageState extends State<ChatPage> {
                               ? BlocProvider.of<ChatblocBloc>(context)
                                   .myPicture!
                               : friendPic,
-                          ds["message"],
+                          ds["message"] != null ? ds["message"] : "failed",
                           BlocProvider.of<ChatblocBloc>(context).myUserName ==
                               ds["sendBy"],
                           ds["Data"],
-                          messageIds.contains(ds.id)),
+                          messageIds.contains(ds.id),
+                          isplaying: ds["isPlaying"].toString() != "false"),
                     );
                   })
               : Container();
         });
   }
 
-  // getAndSetMessage() async {
-  //   print(
-  //       "${BlocProvider.of<ChatblocBloc>(context).chatRoomId}chat page===========");
-  //   messageStream = await DataBasemethods()
-  //       .getChatRoomMessage(BlocProvider.of<ChatblocBloc>(context).chatRoomId);
-  //   print("${messageStream!.first}chat page after ===========");
-  //   setState(() {});
-  // }
-
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   StreamSubscription? _progressSubscription;
 
   Widget chatMessageTile(String senderProfilePic, String message, bool sendByMe,
-      String Data, bool isSelected) {
+      String Data, bool isSelected,
+      {bool? isplaying}) {
     return Container(
       color: isSelected ? Color.fromARGB(109, 127, 228, 235) : Colors.white,
       child: Row(
@@ -692,7 +653,7 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Flexible(
               child: Container(
-            padding: Data == "Image"
+            padding: Data == "Image" || Data == "GIF"
                 ? EdgeInsets.all(5)
                 : Data == "Audio"
                     ? EdgeInsets.all(5)
@@ -709,13 +670,13 @@ class _ChatPageState extends State<ChatPage> {
                 color: sendByMe
                     ? Color.fromARGB(255, 197, 223, 222)
                     : Colors.blue.shade100),
-            child: Data == "Image"
+            child: Data == "Image" || Data == "GIF"
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.network(
                       message,
-                      height: 200,
-                      width: 200,
+                      height: Data == "GIF" ? 250 : 200,
+                      width: Data == "GIF" ? 250 : 200,
                       fit: BoxFit.cover,
                     ),
                   )
@@ -732,7 +693,7 @@ class _ChatPageState extends State<ChatPage> {
                             IconButton(
                               icon: Icon(
                                 size: 35,
-                                _isPlaying
+                                isplaying!
                                     ? Icons.pause_rounded
                                     : Icons.play_arrow_rounded,
                                 color: Colors.blue,
@@ -775,6 +736,7 @@ class _ChatPageState extends State<ChatPage> {
 
                                   setState(() {
                                     _isPlaying = true;
+                                    isplaying = true;
                                   });
                                 }
                               },
