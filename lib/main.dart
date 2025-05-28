@@ -37,8 +37,8 @@ void main() async {
     androidProvider: AndroidProvider.playIntegrity,
   );
 
-  String accessToken = await GetServerKey().getAccessToken();
-  print("Push Notification accesstoken ============>>>>>>>${accessToken}");
+  // String accessToken = await GetServerKey().getAccessToken();
+  // print("Push Notification accesstoken ============>>>>>>>${accessToken}");
   await Supabase.initialize(
     url: 'https://ouiiibnxqioedvlwfbwl.supabase.co',
     anonKey:

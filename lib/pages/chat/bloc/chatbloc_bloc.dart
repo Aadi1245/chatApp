@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:chattest/Services/database.dart';
+import 'package:chattest/Services/sendNotificationService.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,8 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
   String baseUrl =
       "https://ouiiibnxqioedvlwfbwl.supabase.co/storage/v1/object/public/";
   String mainUrl = "";
+
+  List<String> messageIds = [];
   ChatblocBloc({
     required this.name,
     required this.profileUrl,
@@ -210,6 +213,7 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
         String formattedDate = DateFormat("h:mma").format(now);
         Map<String, dynamic> messageInfoMap = {
           "Data": "Audio",
+          "isPlaying": false,
           "message": publicUrl,
           "sendBy": myUserName,
           "ts": formattedDate,
@@ -246,7 +250,7 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
 //For GIF upload
 
   Future<void> uploadGif(String myUserName, String myPicture, String chatRoomId,
-      File selectedGif, String fcmToken) async {
+      File selectedGif) async {
     Fluttertoast.showToast(
       msg: "Your GIF is uploading please wait...",
       toastLength: Toast.LENGTH_SHORT,
@@ -322,6 +326,15 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
         };
         DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
       });
+      var receiverFcmToken = await DataBasemethods().getUserFcmToken(userName);
+      print(" receiverFcmToken ------------>>>>>>> ${receiverFcmToken}");
+      receiverFcmToken != null
+          ? Sendnotificationservice.sendNotificationWithApi(
+              token: receiverFcmToken,
+              title: myUserName,
+              body: downloadGifUrl,
+              data1: {"screen": "chatPage"})
+          : "";
     } catch (e) {
       print("Image throw excetion====>>${e}");
     }

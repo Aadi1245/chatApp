@@ -7,6 +7,8 @@ import 'package:chattest/Services/sendNotificationService.dart';
 import 'package:chattest/Services/shared_pref.dart';
 import 'package:chattest/pages/chat/audio_record.dart';
 import 'package:chattest/pages/chat/bloc/chatbloc_bloc.dart';
+import 'package:chattest/widget/chatMessageTile.dart';
+import 'package:chattest/widget/chat_message_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -46,13 +48,13 @@ class _ChatPageState extends State<ChatPage> {
   final ImagePicker _picker = ImagePicker();
   TextEditingController messageController = TextEditingController();
 
-  bool isRecording = false;
+  // bool isRecording = false;
 
   late AudioRecord _audioRecorder;
   bool _permissionGranted = false;
 
-  FlutterSoundPlayer? _player;
-  bool _isPlaying = false;
+  // FlutterSoundPlayer? _player;
+  // bool _isPlaying = false;
 
   onLoad() async {
     // await getTheSharedpreferenceData();
@@ -83,17 +85,17 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     // TODO: implement initState
     onLoad();
-    _player = FlutterSoundPlayer();
-    _initPlayer();
+    // _player = FlutterSoundPlayer();
+    // _initPlayer();
     _audioRecorder = AudioRecord();
     _initRecorder();
     GifKeyboardInput.startListening();
     super.initState();
   }
 
-  Future<void> _initPlayer() async {
-    await _player!.openPlayer();
-  }
+  // Future<void> _initPlayer() async {
+  //   await _player!.openPlayer();
+  // }
 
   Future<void> _initRecorder() async {
     _permissionGranted = await requestMicrophonePermission();
@@ -119,11 +121,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _audioRecorder.dispose();
-    _player!.stopPlayer();
-    _progressSubscription?.cancel();
-    _player?.closePlayer();
 
-    _player = null;
     super.dispose();
   }
 
@@ -132,9 +130,9 @@ class _ChatPageState extends State<ChatPage> {
     return "${users[0]}_${users[1]}";
   }
 
-  deleteSelectedMessage(String chatRoomId, List<String> messageIds) async {
-    await DataBasemethods().deleteSelectedMessages(chatRoomId, messageIds);
-  }
+  // deleteSelectedMessage(String chatRoomId, List<String> messageIds) async {
+  //   await DataBasemethods().deleteSelectedMessages(chatRoomId, messageIds);
+  // }
 
   addMessage(
       {bool? sendClicked,
@@ -160,17 +158,6 @@ class _ChatPageState extends State<ChatPage> {
         "fcmToken": fcmToken
       };
 
-      receiverFcmToken =
-          await DataBasemethods().getUserFcmToken(widget.userName);
-      print(" receiverFcmToken ------------>>>>>>> ${receiverFcmToken}");
-      receiverFcmToken != null
-          ? Sendnotificationservice.sendNotificationWithApi(
-              token: receiverFcmToken,
-              title: myUserName,
-              body: message,
-              data1: {"screen": "chatPage"})
-          : "";
-
       messageId = randomAlphaNumeric(10);
 
       await DataBasemethods()
@@ -182,12 +169,23 @@ class _ChatPageState extends State<ChatPage> {
           "lastMessageSendTs": formatedDate,
           "time": FieldValue.serverTimestamp()
         };
+
         DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
 
         if (sendClicked!) {
           message = "";
         }
       });
+      receiverFcmToken =
+          await DataBasemethods().getUserFcmToken(widget.userName);
+      print(" receiverFcmToken ------------>>>>>>> ${receiverFcmToken}");
+      receiverFcmToken != null
+          ? Sendnotificationservice.sendNotificationWithApi(
+              token: receiverFcmToken,
+              title: myUserName,
+              body: message,
+              data1: {"screen": "chatPage"})
+          : "";
     }
   }
 
@@ -242,9 +240,13 @@ class _ChatPageState extends State<ChatPage> {
                         // Handle menu item click here
                         print("Selected: $value");
                         if (value == "Delete") {
-                          if (messageIds.isNotEmpty) {
-                            BlocProvider.of<ChatblocBloc>(context)
-                                .add(deleteSelectedMsg(messageIds));
+                          if (BlocProvider.of<ChatblocBloc>(context)
+                              .messageIds
+                              .isNotEmpty) {
+                            BlocProvider.of<ChatblocBloc>(context).add(
+                                deleteSelectedMsg(
+                                    BlocProvider.of<ChatblocBloc>(context)
+                                        .messageIds));
 
                             Fluttertoast.showToast(
                               msg: "Message deleted successfully",
@@ -300,12 +302,13 @@ class _ChatPageState extends State<ChatPage> {
                             children: [
                               Expanded(
                                 // height: MediaQuery.of(context).size.height * 0.78,
-                                child: chatMessage(
+                                child: ChatMessageWidget(
                                     widget.profileUrl,
                                     BlocProvider.of<ChatblocBloc>(context)
                                         .messageStream!,
                                     BlocProvider.of<ChatblocBloc>(context)
-                                        .myUserName!),
+                                        .myUserName!,
+                                    BlocProvider.of<ChatblocBloc>(context)),
                               ),
                               Visibility(
                                 visible: _isRecording,
@@ -381,8 +384,7 @@ class _ChatPageState extends State<ChatPage> {
                                                                     ChatblocBloc>(
                                                                 context)
                                                             .chatRoomId!,
-                                                        selectedGifFile,
-                                                        receiverFcmToken!);
+                                                        selectedGifFile);
                                               }
                                             },
                                           ),
@@ -555,252 +557,90 @@ class _ChatPageState extends State<ChatPage> {
 
   String? receiverFcmToken;
   // Stream? messageStream;
-  List<String> messageIds = [];
-  Widget chatMessage(
-      String friendPic, Stream messageStream, String myUsername) {
-    return StreamBuilder(
-        stream: messageStream,
-        builder: (context, AsyncSnapshot snapshot) {
-          return snapshot.hasData
-              ? ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: snapshot.data.docs.length,
-                  reverse: true,
-                  itemBuilder: (context, index) {
-                    DocumentSnapshot ds = snapshot.data.docs[index];
 
-                    // print(
-                    //     "chat messages-sdf-------1${messageIds}--------${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
-                    return GestureDetector(
-                      onTap: () {
-                        if (messageIds.isNotEmpty) {
-                          if (messageIds.contains(ds.id)) {
-                            messageIds.removeWhere((item) => item == ds.id);
-                            setState(() {});
-                          } else {
-                            if (BlocProvider.of<ChatblocBloc>(context)
-                                    .myUserName ==
-                                ds["sendBy"]) {
-                              messageIds.add(ds.id);
-                            } else {
-                              Fluttertoast.showToast(
-                                msg:
-                                    "You don't have permission to modify this message.",
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.TOP,
-                                backgroundColor: Colors.red,
-                                textColor: Colors.white,
-                                fontSize: 12.0,
-                              );
-                            }
-                            setState(() {});
-                          }
-                        }
-                      },
-                      onLongPress: () {
-                        if (messageIds.contains(ds.id)) {
-                          messageIds.removeWhere((item) => item == ds.id);
-                          setState(() {});
-                        } else {
-                          if (BlocProvider.of<ChatblocBloc>(context)
-                                  .myUserName ==
-                              ds["sendBy"]) {
-                            messageIds.add(ds.id);
-                          } else {
-                            Fluttertoast.showToast(
-                              msg:
-                                  "You don't have permission to modify this message.",
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.TOP,
-                              backgroundColor: Colors.red,
-                              textColor: Colors.white,
-                              fontSize: 12.0,
-                            );
-                          }
-                          setState(() {});
-                        }
-                      },
-                      child: chatMessageTile(
-                          BlocProvider.of<ChatblocBloc>(context).myUserName ==
-                                  ds["sendBy"]
-                              ? BlocProvider.of<ChatblocBloc>(context)
-                                  .myPicture!
-                              : friendPic,
-                          ds["message"] != null ? ds["message"] : "failed",
-                          BlocProvider.of<ChatblocBloc>(context).myUserName ==
-                              ds["sendBy"],
-                          ds["Data"],
-                          messageIds.contains(ds.id),
-                          isplaying: ds["isPlaying"].toString() != "false"),
-                    );
-                  })
-              : Container();
-        });
-  }
+  // Widget chatMessage(
+  //     String friendPic, Stream messageStream, String myUsername) {
+  //   return StreamBuilder(
+  //       stream: messageStream,
+  //       builder: (context, AsyncSnapshot snapshot) {
+  //         return snapshot.hasData
+  //             ? ListView.builder(
+  //                 shrinkWrap: true,
+  //                 itemCount: snapshot.data.docs.length,
+  //                 reverse: true,
+  //                 itemBuilder: (context, index) {
+  //                   DocumentSnapshot ds = snapshot.data.docs[index];
+  //                   final data = ds.data() as Map<String, dynamic>;
+  //                   final isPlaying = data["isPlaying"] ?? false;
 
-  Duration _position = Duration.zero;
-  Duration _duration = Duration.zero;
-  StreamSubscription? _progressSubscription;
-
-  Widget chatMessageTile(String senderProfilePic, String message, bool sendByMe,
-      String Data, bool isSelected,
-      {bool? isplaying}) {
-    return Container(
-      color: isSelected ? Color.fromARGB(109, 127, 228, 235) : Colors.white,
-      child: Row(
-        mainAxisAlignment:
-            sendByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          Flexible(
-              child: Container(
-            padding: Data == "Image" || Data == "GIF"
-                ? EdgeInsets.all(5)
-                : Data == "Audio"
-                    ? EdgeInsets.all(5)
-                    : EdgeInsets.all(12),
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                    bottomLeft:
-                        sendByMe ? Radius.circular(15) : Radius.circular(0),
-                    bottomRight:
-                        sendByMe ? Radius.circular(0) : Radius.circular(15)),
-                color: sendByMe
-                    ? Color.fromARGB(255, 197, 223, 222)
-                    : Colors.blue.shade100),
-            child: Data == "Image" || Data == "GIF"
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      message,
-                      height: Data == "GIF" ? 250 : 200,
-                      width: Data == "GIF" ? 250 : 200,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Data == "Audio"
-                    ? Container(
-                        decoration: BoxDecoration(
-                          // color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            audioProfileWithMic(senderProfilePic),
-                            IconButton(
-                              icon: Icon(
-                                size: 35,
-                                isplaying!
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () async {
-                                if (_isPlaying) {
-                                  await _player!.stopPlayer();
-                                  await _progressSubscription?.cancel();
-                                  setState(() {
-                                    _isPlaying = false;
-                                    _position = Duration.zero;
-                                    _duration = Duration.zero;
-                                  });
-                                } else {
-                                  await _player!.startPlayer(
-                                    fromURI: message,
-                                    // codec: Codec.aacADTS,
-                                    whenFinished: () async {
-                                      await _progressSubscription?.cancel();
-                                      setState(() {
-                                        _isPlaying = false;
-                                        _position = Duration.zero;
-                                        _duration = Duration.zero;
-                                      });
-                                    },
-                                  );
-
-                                  _progressSubscription =
-                                      _player!.onProgress!.listen((event) {
-                                    if (event != null && mounted) {
-                                      setState(() {
-                                        _position = event.position;
-                                        _duration = event.duration;
-
-                                        print(
-                                            "time------------->>>>>${_duration.inMilliseconds}");
-                                      });
-                                    }
-                                  });
-
-                                  setState(() {
-                                    _isPlaying = true;
-                                    isplaying = true;
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                                child: LinearProgressIndicator(
-                              value: (_duration.inMilliseconds == 0)
-                                  ? 0
-                                  : _position.inMilliseconds /
-                                      _duration.inMilliseconds,
-                              backgroundColor: Colors.grey,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Colors.blue),
-                            )),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      )
-                    : Text(
-                        message,
-                        style: TextStyle(
-                            fontSize: 16,
-                            // fontWeight: FontWeight.w500,
-                            color: Colors.black),
-                      ),
-          ))
-        ],
-      ),
-    );
-  }
-
-  Widget audioProfileWithMic(String imageUrl) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(25), // half of 50 for circle
-          child: Image.network(
-            imageUrl,
-            height: 50,
-            width: 50,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          top: 35,
-          left: 35,
-          bottom: 0,
-          right: 0,
-          // child: Container(
-          //   height: 20,
-          //   width: 20,
-          //   decoration: BoxDecoration(
-          //     shape: BoxShape.circle,
-          //     color: Colors.black.withOpacity(0.6),
-          //   ),
-          child: Icon(
-            Icons.mic,
-            size: 18,
-            color: Colors.grey,
-          ),
-          // ),
-        ),
-      ],
-    );
-  }
+  //                   // print(
+  //                   //     "----------- ds[isPlaying]-------${ds.data()}----------dsisPlaying----${ds.get("isPlaying")}---${ds["isPlaying"]}");
+  //                   // print(
+  //                   //     "chat messages-sdf-------1${messageIds}--------${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
+  //                   return GestureDetector(
+  //                     onTap: () {
+  //                       if (messageIds.isNotEmpty) {
+  //                         if (messageIds.contains(ds.id)) {
+  //                           messageIds.removeWhere((item) => item == ds.id);
+  //                           setState(() {});
+  //                         } else {
+  //                           if (BlocProvider.of<ChatblocBloc>(context)
+  //                                   .myUserName ==
+  //                               ds["sendBy"]) {
+  //                             messageIds.add(ds.id);
+  //                           } else {
+  //                             Fluttertoast.showToast(
+  //                               msg:
+  //                                   "You don't have permission to modify this message.",
+  //                               toastLength: Toast.LENGTH_SHORT,
+  //                               gravity: ToastGravity.TOP,
+  //                               backgroundColor: Colors.red,
+  //                               textColor: Colors.white,
+  //                               fontSize: 12.0,
+  //                             );
+  //                           }
+  //                           setState(() {});
+  //                         }
+  //                       }
+  //                     },
+  //                     onLongPress: () {
+  //                       if (messageIds.contains(ds.id)) {
+  //                         messageIds.removeWhere((item) => item == ds.id);
+  //                         setState(() {});
+  //                       } else {
+  //                         if (BlocProvider.of<ChatblocBloc>(context)
+  //                                 .myUserName ==
+  //                             ds["sendBy"]) {
+  //                           messageIds.add(ds.id);
+  //                         } else {
+  //                           Fluttertoast.showToast(
+  //                             msg:
+  //                                 "You don't have permission to modify this message.",
+  //                             toastLength: Toast.LENGTH_SHORT,
+  //                             gravity: ToastGravity.TOP,
+  //                             backgroundColor: Colors.red,
+  //                             textColor: Colors.white,
+  //                             fontSize: 12.0,
+  //                           );
+  //                         }
+  //                         setState(() {});
+  //                       }
+  //                     },
+  //                     child: Chatmessagetile(
+  //                         BlocProvider.of<ChatblocBloc>(context).myUserName ==
+  //                                 ds["sendBy"]
+  //                             ? BlocProvider.of<ChatblocBloc>(context)
+  //                                 .myPicture!
+  //                             : friendPic,
+  //                         ds["message"] != null ? ds["message"] : "failed",
+  //                         BlocProvider.of<ChatblocBloc>(context).myUserName ==
+  //                             ds["sendBy"],
+  //                         ds["Data"],
+  //                         messageIds.contains(ds.id),
+  //                         isplaying: isPlaying),
+  //                   );
+  //                 })
+  //             : Container();
+  //       });
+  // }
 }
