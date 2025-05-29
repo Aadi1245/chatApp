@@ -142,13 +142,26 @@ class DataBasemethods {
         .get();
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>>? chatRoomsStream;
   Future<Stream<QuerySnapshot>> getChatRooms() async {
-    String? myUserName = await SharedPreferenceHelper().getUserName();
-    print("under chatrooms call-------->>>>${myUserName}");
-    return await FirebaseFirestore.instance
-        .collection("chatRoom")
-        .orderBy("time", descending: true)
-        .where("user", arrayContains: myUserName!)
-        .snapshots();
+    try {
+      String? myUserName = await SharedPreferenceHelper().getUserName();
+      print("Fetching chat rooms for user: $myUserName");
+
+      if (myUserName == null) {
+        throw Exception("Username is null");
+      }
+
+      chatRoomsStream = FirebaseFirestore.instance
+          .collection("chatRoom")
+          .where("user", arrayContains: myUserName.toUpperCase())
+          .orderBy("time", descending: true)
+          .snapshots();
+
+      return chatRoomsStream!;
+    } catch (e) {
+      print("Error fetching chat rooms: $e");
+      rethrow;
+    }
   }
 }

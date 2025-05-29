@@ -11,9 +11,11 @@ class ChatMessageWidget extends StatefulWidget {
   Stream messageStream;
   String myUsername;
   ChatblocBloc chatbloc;
+  Function(String message, bool sendByMe, String picture)? showReply;
+
   ChatMessageWidget(
       this.friendPic, this.messageStream, this.myUsername, this.chatbloc,
-      {super.key});
+      {super.key, this.showReply});
 
   @override
   State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
@@ -88,14 +90,27 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                         }
                       },
                       child: Chatmessagetile(
-                          widget.chatbloc.myUserName == ds["sendBy"]
-                              ? widget.chatbloc.myPicture!
-                              : widget.friendPic,
-                          ds["message"] != null ? ds["message"] : "failed",
-                          widget.chatbloc.myUserName == ds["sendBy"],
-                          ds["Data"],
-                          widget.chatbloc.messageIds.contains(ds.id),
-                          isplaying: isPlaying),
+                        widget.chatbloc.myUserName == ds["sendBy"]
+                            ? widget.chatbloc.myPicture!
+                            : widget.friendPic,
+                        ds["message"] != null ? ds["message"] : "failed",
+                        widget.chatbloc.myUserName == ds["sendBy"],
+                        ds["Data"],
+                        widget.chatbloc.messageIds.contains(ds.id),
+                        isplaying: isPlaying,
+                        showReply: () {
+                          print("message kya 11111h ${ds["message"]}----->>>>");
+                          if (ds["message"] != null) {
+                            widget.showReply!(
+                              ds["message"],
+                              widget.chatbloc.myUserName == ds["sendBy"],
+                              widget.chatbloc.myUserName == ds["sendBy"]
+                                  ? widget.chatbloc.myPicture!
+                                  : widget.friendPic,
+                            );
+                          }
+                        },
+                      ),
                     );
                   })
               : Container();

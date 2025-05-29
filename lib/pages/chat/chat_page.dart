@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/sendNotificationService.dart';
@@ -9,6 +10,7 @@ import 'package:chattest/pages/chat/audio_record.dart';
 import 'package:chattest/pages/chat/bloc/chatbloc_bloc.dart';
 import 'package:chattest/widget/chatMessageTile.dart';
 import 'package:chattest/widget/chat_message_widget.dart';
+import 'package:chattest/widget/common_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -189,6 +191,9 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  String replyMessage = "", replypicture = "";
+  bool isSendByMe = false;
+
   bool mic = true, _isRecording = false;
   @override
   Widget build(BuildContext context) {
@@ -303,12 +308,22 @@ class _ChatPageState extends State<ChatPage> {
                               Expanded(
                                 // height: MediaQuery.of(context).size.height * 0.78,
                                 child: ChatMessageWidget(
-                                    widget.profileUrl,
-                                    BlocProvider.of<ChatblocBloc>(context)
-                                        .messageStream!,
-                                    BlocProvider.of<ChatblocBloc>(context)
-                                        .myUserName!,
-                                    BlocProvider.of<ChatblocBloc>(context)),
+                                  widget.profileUrl,
+                                  BlocProvider.of<ChatblocBloc>(context)
+                                      .messageStream!,
+                                  BlocProvider.of<ChatblocBloc>(context)
+                                      .myUserName!,
+                                  BlocProvider.of<ChatblocBloc>(context),
+                                  showReply: (message, sendByMe, Picture) {
+                                    // m
+                                    print(
+                                        "message kya h ${message}----->>>>${sendByMe}=======${Picture}");
+                                    replyMessage = message;
+                                    isSendByMe = sendByMe;
+                                    replypicture = Picture;
+                                    setState(() {});
+                                  },
+                                ),
                               ),
                               Visibility(
                                 visible: _isRecording,
@@ -337,108 +352,158 @@ class _ChatPageState extends State<ChatPage> {
                                           ),
                                         ],
                                       ),
-                                      child: Row(
+                                      child: Column(
                                         children: [
-                                          IconButton(
-                                            icon: Icon(Icons.gif,
-                                                color: Colors.grey, size: 30),
-                                            onPressed: () async {
-                                              final gif = await GiphyGet.getGif(
-                                                context: context,
-                                                apiKey:
-                                                    "fmRcfcCrA0eJVznbt9epr4pIDLh6isoO", // Replace with your Giphy API Key
-                                                lang: GiphyLanguage.english,
-                                                randomID: Uuid().v4(),
-                                                tabColor: Colors.purple,
-                                              );
-
-                                              if (gif != null) {
-                                                // Step 1: Download GIF as File
-                                                final response = await http.get(
-                                                    Uri.parse(gif.images!
-                                                        .original!.url!));
-                                                final tempDir =
-                                                    Directory.systemTemp;
-                                                final filePath =
-                                                    "${tempDir.path}/${const Uuid().v4()}.gif";
-                                                final selectedGifFile =
-                                                    File(filePath);
-                                                await selectedGifFile
-                                                    .writeAsBytes(
-                                                        response.bodyBytes);
-
-                                                print(
-                                                    "File of GIF--------=======>>>> ${selectedGifFile}");
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .uploadGif(
-                                                        BlocProvider.of<
-                                                                    ChatblocBloc>(
-                                                                context)
-                                                            .myUserName!,
-                                                        BlocProvider.of<
-                                                                    ChatblocBloc>(
-                                                                context)
-                                                            .myPicture!,
-                                                        BlocProvider.of<
-                                                                    ChatblocBloc>(
-                                                                context)
-                                                            .chatRoomId!,
-                                                        selectedGifFile);
-                                              }
-                                            },
-                                          ),
-                                          Expanded(
-                                            child: TextField(
-                                              onChanged: (value) {
-                                                if (value.trim().isNotEmpty) {
-                                                  mic = false;
-                                                } else {
-                                                  mic = true;
-                                                }
-
-                                                setState(() {});
-                                              },
-                                              controller: messageController,
-                                              keyboardType:
-                                                  TextInputType.multiline,
-                                              textInputAction:
-                                                  TextInputAction.newline,
-                                              maxLines: null,
-                                              decoration: InputDecoration(
-                                                hintText: "Type a message...",
-                                                border: InputBorder.none,
-                                              ),
+                                          Visibility(
+                                            visible:
+                                                replyMessage.trim().isNotEmpty,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                replyMessage.contains(".aac")
+                                                    ? CommonWidgets
+                                                        .audioReplyMessage(
+                                                            replypicture)
+                                                    : replyMessage
+                                                            .contains(".jpg")
+                                                        ? Icon(Icons.image)
+                                                        : replyMessage.contains(
+                                                                ".gif")
+                                                            ? Icon(
+                                                                Icons.gif_box)
+                                                            : Text(
+                                                                replyMessage,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        16,
+                                                                    color: Colors
+                                                                        .black),
+                                                              ),
+                                                IconButton(
+                                                    onPressed: () {
+                                                      replyMessage = "";
+                                                      setState(() {});
+                                                    },
+                                                    icon: Icon(
+                                                        Icons.cancel_sharp))
+                                              ],
                                             ),
                                           ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              var image =
-                                                  await _picker.pickImage(
-                                                      source:
-                                                          ImageSource.gallery);
-                                              selectedImage = File(image!.path);
-                                              BlocProvider.of<ChatblocBloc>(
-                                                      context)
-                                                  .uploadImage(
-                                                      context,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .myUserName!,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .myPicture!,
-                                                      BlocProvider.of<
-                                                                  ChatblocBloc>(
-                                                              context)
-                                                          .chatRoomId!,
-                                                      selectedImage!);
-                                              setState(() {});
-                                            },
-                                            child: Icon(Icons.attach_file,
-                                                color: Colors.grey[700]),
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.gif,
+                                                    color: Colors.grey,
+                                                    size: 30),
+                                                onPressed: () async {
+                                                  final gif =
+                                                      await GiphyGet.getGif(
+                                                    context: context,
+                                                    apiKey:
+                                                        "fmRcfcCrA0eJVznbt9epr4pIDLh6isoO", // Replace with your Giphy API Key
+                                                    lang: GiphyLanguage.english,
+                                                    randomID: Uuid().v4(),
+                                                    tabColor: Colors.purple,
+                                                  );
+
+                                                  if (gif != null) {
+                                                    // Step 1: Download GIF as File
+                                                    final response = await http
+                                                        .get(Uri.parse(gif
+                                                            .images!
+                                                            .original!
+                                                            .url!));
+                                                    final tempDir =
+                                                        Directory.systemTemp;
+                                                    final filePath =
+                                                        "${tempDir.path}/${const Uuid().v4()}.gif";
+                                                    final selectedGifFile =
+                                                        File(filePath);
+                                                    await selectedGifFile
+                                                        .writeAsBytes(
+                                                            response.bodyBytes);
+
+                                                    print(
+                                                        "File of GIF--------=======>>>> ${selectedGifFile}");
+                                                    BlocProvider.of<
+                                                                ChatblocBloc>(
+                                                            context)
+                                                        .uploadGif(
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .myUserName!,
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .myPicture!,
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .chatRoomId!,
+                                                            selectedGifFile);
+                                                  }
+                                                },
+                                              ),
+                                              Expanded(
+                                                child: TextField(
+                                                  onChanged: (value) {
+                                                    if (value
+                                                        .trim()
+                                                        .isNotEmpty) {
+                                                      mic = false;
+                                                    } else {
+                                                      mic = true;
+                                                    }
+
+                                                    setState(() {});
+                                                  },
+                                                  controller: messageController,
+                                                  keyboardType:
+                                                      TextInputType.multiline,
+                                                  textInputAction:
+                                                      TextInputAction.newline,
+                                                  maxLines: null,
+                                                  decoration: InputDecoration(
+                                                    hintText:
+                                                        "Type a message...",
+                                                    border: InputBorder.none,
+                                                  ),
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () async {
+                                                  var image =
+                                                      await _picker.pickImage(
+                                                          source: ImageSource
+                                                              .gallery);
+                                                  selectedImage =
+                                                      File(image!.path);
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .uploadImage(
+                                                          context,
+                                                          BlocProvider.of<
+                                                                      ChatblocBloc>(
+                                                                  context)
+                                                              .myUserName!,
+                                                          BlocProvider.of<
+                                                                      ChatblocBloc>(
+                                                                  context)
+                                                              .myPicture!,
+                                                          BlocProvider.of<
+                                                                      ChatblocBloc>(
+                                                                  context)
+                                                              .chatRoomId!,
+                                                          selectedImage!);
+                                                  setState(() {});
+                                                },
+                                                child: Icon(Icons.attach_file,
+                                                    color: Colors.grey[700]),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),

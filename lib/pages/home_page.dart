@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   TextEditingController searchController = TextEditingController();
 
   bool search = false;
-  Stream? chatRoomsStream;
+  Stream<QuerySnapshot>? chatRoomsStream;
   var queryResultSet = [];
   var tempSearchStore = [];
 
@@ -27,11 +27,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   initiateSearch(String value) {
-    if (value.length == 0) {
+    if (value.trim().length == 0) {
       setState(() {
         queryResultSet = [];
         tempSearchStore = [];
+        search = false;
       });
+      onTheLoad();
     } else {
       setState(() {
         search = true;
@@ -59,6 +61,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget chatRoomList() {
+    print("cha------------------->>>>> inside chtroomlistsdfsvd");
     return StreamBuilder(
         stream: chatRoomsStream,
         builder: (context, AsyncSnapshot snapshot) {
@@ -100,6 +103,9 @@ class _HomePageState extends State<HomePage> {
   onTheLoad() async {
     await getTheSharedpreferenceData();
     chatRoomsStream = await DataBasemethods().getChatRooms();
+
+    print(" after on the load chatRoomsStream-------->>>>${chatRoomsStream}");
+
     subName = myName!.split(" ");
     setState(() {});
   }
@@ -108,6 +114,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey,
+      resizeToAvoidBottomInset: false,
       body: Container(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -217,6 +224,10 @@ class _HomePageState extends State<HomePage> {
                         controller: searchController,
                         onChanged: (value) {
                           initiateSearch(value.toUpperCase());
+                          // searchController.text == ""
+                          //     ? search = false
+                          //     : search = true;
+                          // setState(() {});
                         },
                         decoration: InputDecoration(
                             prefixIcon: Icon(Icons.search),
