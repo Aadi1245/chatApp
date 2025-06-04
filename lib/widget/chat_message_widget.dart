@@ -99,7 +99,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                         widget.chatbloc.messageIds.contains(ds.id),
                         isplaying: isPlaying,
                         showReply: () {
-                          print("message kya 11111h ${ds["message"]}----->>>>");
+                          // print("message kya 11111h ${ds["message"]}----->>>>");
                           if (ds["message"] != null) {
                             widget.showReply!(
                               ds["message"],
@@ -110,6 +110,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             );
                           }
                         },
+                        replyMessage: ds["Data"] == "replyMessage"
+                            ? ds["replyMessage"]
+                            : "",
                       ),
                     );
                   })

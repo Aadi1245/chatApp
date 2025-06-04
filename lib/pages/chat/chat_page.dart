@@ -20,6 +20,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:giphy_get/giphy_get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:random_string/random_string.dart';
@@ -105,16 +106,15 @@ class _ChatPageState extends State<ChatPage> {
       await _audioRecorder.init();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-                'Microphone permission is required to record audio.'),
-            action: SnackBarAction(
-              label: 'Settings',
-              onPressed: () => openAppSettings(),
-            ),
-          ),
+        Fluttertoast.showToast(
+          msg: "Message deleted successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 12.0,
         );
+        openAppSettings();
       }
     }
     setState(() {});
@@ -160,13 +160,27 @@ class _ChatPageState extends State<ChatPage> {
         "fcmToken": fcmToken
       };
 
+      Map<String, dynamic> replyMessageInfoMap = {
+        "Data": "replyMessage",
+        "isPlaying": false,
+        "replyMessage": replyMessage,
+        "message": gifUrl == null ? message : gifUrl,
+        "sendBy": myUserName,
+        "ts": formatedDate,
+        "time": FieldValue.serverTimestamp(),
+        "imgUrl": myPicture,
+        "fcmToken": fcmToken
+      };
+
       messageId = randomAlphaNumeric(10);
 
       await DataBasemethods()
-          .addMessage(chatRoomId!, messageId!, messageInfoMap)
+          .addMessage(chatRoomId!, messageId!,
+              replyMessage.isNotEmpty ? replyMessageInfoMap : messageInfoMap)
           .then((value) {
         Map<String, dynamic> lastMessageInfoMap = {
           "lastMessage": gifUrl == null ? message : gifUrl,
+          "replyMessage": replyMessage.isNotEmpty ? replyMessage : "",
           "lastMessageSendBy": myUserName,
           "lastMessageSendTs": formatedDate,
           "time": FieldValue.serverTimestamp()
@@ -188,6 +202,9 @@ class _ChatPageState extends State<ChatPage> {
               body: message,
               data1: {"screen": "chatPage"})
           : "";
+      setState(() {
+        replyMessage = "";
+      });
     }
   }
 
@@ -317,7 +334,7 @@ class _ChatPageState extends State<ChatPage> {
                                   showReply: (message, sendByMe, Picture) {
                                     // m
                                     print(
-                                        "message kya h ${message}----->>>>${sendByMe}=======${Picture}");
+                                        "=<><><><><>reply call back<><>>><><> ${message}----->>>>${sendByMe}=======${Picture}");
                                     replyMessage = message;
                                     isSendByMe = sendByMe;
                                     replypicture = Picture;
@@ -357,37 +374,116 @@ class _ChatPageState extends State<ChatPage> {
                                           Visibility(
                                             visible:
                                                 replyMessage.trim().isNotEmpty,
-                                            child: Row(
+                                            child: Column(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                                  MainAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                replyMessage.contains(".aac")
-                                                    ? CommonWidgets
-                                                        .audioReplyMessage(
-                                                            replypicture)
-                                                    : replyMessage
-                                                            .contains(".jpg")
-                                                        ? Icon(Icons.image)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 8.0, left: 8.0),
+                                                  child: Text(
+                                                    isSendByMe
+                                                        ? BlocProvider.of<
+                                                                    ChatblocBloc>(
+                                                                context)
+                                                            .myName!
+                                                        : widget.name,
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    replyMessage
+                                                            .contains(".aac")
+                                                        ? CommonWidgets
+                                                            .audioReplyMessage(
+                                                                replypicture)
                                                         : replyMessage.contains(
-                                                                ".gif")
-                                                            ? Icon(
-                                                                Icons.gif_box)
-                                                            : Text(
-                                                                replyMessage,
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        16,
-                                                                    color: Colors
-                                                                        .black),
-                                                              ),
-                                                IconButton(
-                                                    onPressed: () {
-                                                      replyMessage = "";
-                                                      setState(() {});
-                                                    },
-                                                    icon: Icon(
-                                                        Icons.cancel_sharp))
+                                                                ".jpg")
+                                                            ? Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child:
+                                                                    ClipRRect(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              10), // half of 50 for circle
+                                                                  child: Image
+                                                                      .network(
+                                                                    replyMessage,
+                                                                    height: 50,
+                                                                    width: 50,
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                  ),
+                                                                ),
+                                                              )
+                                                            : replyMessage
+                                                                    .contains(
+                                                                        ".gif")
+                                                                ? Padding(
+                                                                    padding:
+                                                                        const EdgeInsets
+                                                                            .all(
+                                                                            8.0),
+                                                                    child:
+                                                                        ClipRRect(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              10), // half of 50 for circle
+                                                                      child: Image
+                                                                          .network(
+                                                                        replyMessage,
+                                                                        height:
+                                                                            50,
+                                                                        width:
+                                                                            50,
+                                                                        fit: BoxFit
+                                                                            .cover,
+                                                                      ),
+                                                                    ),
+                                                                  )
+                                                                : Expanded(
+                                                                    child:
+                                                                        Padding(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          8.0),
+                                                                      child:
+                                                                          Text(
+                                                                        replyMessage,
+                                                                        maxLines:
+                                                                            3,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                16,
+                                                                            color:
+                                                                                Colors.black),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                    IconButton(
+                                                        onPressed: () {
+                                                          replyMessage = "";
+                                                          setState(() {});
+                                                        },
+                                                        icon: Icon(
+                                                            Icons.cancel_sharp))
+                                                  ],
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -621,91 +717,4 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   String? receiverFcmToken;
-  // Stream? messageStream;
-
-  // Widget chatMessage(
-  //     String friendPic, Stream messageStream, String myUsername) {
-  //   return StreamBuilder(
-  //       stream: messageStream,
-  //       builder: (context, AsyncSnapshot snapshot) {
-  //         return snapshot.hasData
-  //             ? ListView.builder(
-  //                 shrinkWrap: true,
-  //                 itemCount: snapshot.data.docs.length,
-  //                 reverse: true,
-  //                 itemBuilder: (context, index) {
-  //                   DocumentSnapshot ds = snapshot.data.docs[index];
-  //                   final data = ds.data() as Map<String, dynamic>;
-  //                   final isPlaying = data["isPlaying"] ?? false;
-
-  //                   // print(
-  //                   //     "----------- ds[isPlaying]-------${ds.data()}----------dsisPlaying----${ds.get("isPlaying")}---${ds["isPlaying"]}");
-  //                   // print(
-  //                   //     "chat messages-sdf-------1${messageIds}--------${snapshot.data.docs.length}----${ds["message"]}--${ds["sendBy"]}----${ds["Data"]}--");
-  //                   return GestureDetector(
-  //                     onTap: () {
-  //                       if (messageIds.isNotEmpty) {
-  //                         if (messageIds.contains(ds.id)) {
-  //                           messageIds.removeWhere((item) => item == ds.id);
-  //                           setState(() {});
-  //                         } else {
-  //                           if (BlocProvider.of<ChatblocBloc>(context)
-  //                                   .myUserName ==
-  //                               ds["sendBy"]) {
-  //                             messageIds.add(ds.id);
-  //                           } else {
-  //                             Fluttertoast.showToast(
-  //                               msg:
-  //                                   "You don't have permission to modify this message.",
-  //                               toastLength: Toast.LENGTH_SHORT,
-  //                               gravity: ToastGravity.TOP,
-  //                               backgroundColor: Colors.red,
-  //                               textColor: Colors.white,
-  //                               fontSize: 12.0,
-  //                             );
-  //                           }
-  //                           setState(() {});
-  //                         }
-  //                       }
-  //                     },
-  //                     onLongPress: () {
-  //                       if (messageIds.contains(ds.id)) {
-  //                         messageIds.removeWhere((item) => item == ds.id);
-  //                         setState(() {});
-  //                       } else {
-  //                         if (BlocProvider.of<ChatblocBloc>(context)
-  //                                 .myUserName ==
-  //                             ds["sendBy"]) {
-  //                           messageIds.add(ds.id);
-  //                         } else {
-  //                           Fluttertoast.showToast(
-  //                             msg:
-  //                                 "You don't have permission to modify this message.",
-  //                             toastLength: Toast.LENGTH_SHORT,
-  //                             gravity: ToastGravity.TOP,
-  //                             backgroundColor: Colors.red,
-  //                             textColor: Colors.white,
-  //                             fontSize: 12.0,
-  //                           );
-  //                         }
-  //                         setState(() {});
-  //                       }
-  //                     },
-  //                     child: Chatmessagetile(
-  //                         BlocProvider.of<ChatblocBloc>(context).myUserName ==
-  //                                 ds["sendBy"]
-  //                             ? BlocProvider.of<ChatblocBloc>(context)
-  //                                 .myPicture!
-  //                             : friendPic,
-  //                         ds["message"] != null ? ds["message"] : "failed",
-  //                         BlocProvider.of<ChatblocBloc>(context).myUserName ==
-  //                             ds["sendBy"],
-  //                         ds["Data"],
-  //                         messageIds.contains(ds.id),
-  //                         isplaying: isPlaying),
-  //                   );
-  //                 })
-  //             : Container();
-  //       });
-  // }
 }

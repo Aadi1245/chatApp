@@ -8,15 +8,23 @@ import 'package:permission_handler/permission_handler.dart';
 
 class Chatmessagetile extends StatefulWidget {
   Function()? showReply;
-  Chatmessagetile(this.senderProfilePic, this.message, this.sendByMe, this.Data,
-      this.isSelected,
-      {this.isplaying = false, this.showReply});
+  Chatmessagetile(
+    this.senderProfilePic,
+    this.message,
+    this.sendByMe,
+    this.Data,
+    this.isSelected, {
+    this.isplaying = false,
+    this.showReply,
+    this.replyMessage,
+  });
   String senderProfilePic;
   String message;
   bool sendByMe;
   String Data;
   bool isSelected;
   bool isplaying;
+  String? replyMessage;
 
   @override
   State<Chatmessagetile> createState() => _ChatmessagetileState();
@@ -132,7 +140,7 @@ class _ChatmessagetileState extends State<Chatmessagetile>
                       // Received -> allow right swipe only
                       if (_dragOffset < 0) _dragOffset = 0;
                       print("allow right swipe only--------->>");
-                      print("message kya 2222 }----->>>>");
+                      // print("message kya 2222 }----->>>>");
                       widget.showReply!();
                     }
                   });
@@ -275,11 +283,92 @@ class _ChatmessagetileState extends State<Chatmessagetile>
                                     ],
                                   ),
                                 )
-                              : Text(
-                                  widget.message,
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.black),
-                                ),
+                              : widget.Data == "replyMessage"
+                                  ? Container(
+                                      margin: EdgeInsets.only(bottom: 6),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        border: Border(
+                                          left: BorderSide(
+                                            color: Colors
+                                                .blue, // a colored line to indicate reply
+                                            width: 4,
+                                          ),
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      constraints:
+                                          BoxConstraints(maxWidth: 250),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          widget.replyMessage!.contains(".aac")
+                                              ? CommonWidgets.audioReplyMessage(
+                                                  widget.replyMessage!)
+                                              : widget.replyMessage!
+                                                      .contains(".jpg")
+                                                  ? ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10), // half of 50 for circle
+                                                      child: Image.network(
+                                                        widget.replyMessage!,
+                                                        height: 50,
+                                                        width: 50,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    )
+                                                  : widget.replyMessage!
+                                                          .contains(".gif")
+                                                      ? ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                  10), // half of 50 for circle
+                                                          child: Image.network(
+                                                            widget
+                                                                .replyMessage!,
+                                                            height: 50,
+                                                            width: 50,
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        )
+                                                      : Text(
+                                                          widget.Data ==
+                                                                  "replyMessage"
+                                                              ? widget
+                                                                  .replyMessage!
+                                                              : "",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.blueGrey,
+                                                          ),
+                                                        ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            widget.message,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black87),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  :
+
+                                  // ACTUAL MESSAGE
+                                  Text(
+                                      widget.message,
+                                      style: TextStyle(
+                                          fontSize: 16, color: Colors.black),
+                                    ),
                     ))),
           )
         ],
