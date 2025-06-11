@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CommonWidgets {
-  String placeholderImage =
+  static String placeholderImage =
       "https://www.kindpng.com/picc/m/78-786111_transparent-placeholder-png-placeholder-image-png-clipart.png";
   static Widget audioProfileWithMic(String imageUrl) {
     return Stack(
@@ -9,9 +9,7 @@ class CommonWidgets {
         ClipRRect(
           borderRadius: BorderRadius.circular(25), // half of 50 for circle
           child: Image.network(
-            imageUrl != "" || imageUrl != null
-                ? imageUrl
-                : "https://www.kindpng.com/picc/m/78-786111_transparent-placeholder-png-placeholder-image-png-clipart.png",
+            imageUrl != "" || imageUrl != null ? imageUrl : placeholderImage,
             height: 50,
             width: 50,
             fit: BoxFit.cover,

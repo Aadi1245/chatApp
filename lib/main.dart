@@ -2,6 +2,7 @@
 // import 'package:chattest/pages/home.dart';
 import 'package:chattest/Services/firebase_message.dart';
 import 'package:chattest/Services/get_server_key.dart';
+import 'package:chattest/app_theme.dart';
 import 'package:chattest/pages/chat/chat_page.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:chattest/pages/starter/onboarding.dart';
@@ -55,9 +56,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Dash Chat Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
-        ),
+        theme: AppTheme.lightTheme,
+        // ThemeData(
+        //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
+        // ),
         home: Onbpoarding());
   }
 }
