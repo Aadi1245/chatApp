@@ -6,8 +6,11 @@ import 'dart:ui';
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/sendNotificationService.dart';
 import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/pages/chat/ApiCalling/all_api_calling.dart';
 import 'package:chattest/pages/chat/audio_record.dart';
 import 'package:chattest/pages/chat/bloc/chatbloc_bloc.dart';
+import 'package:chattest/pages/chat/call_screen.dart';
+import 'package:chattest/pages/chat/video_call_page.dart';
 import 'package:chattest/widget/chatMessageTile.dart';
 import 'package:chattest/widget/chat_message_widget.dart';
 import 'package:chattest/widget/common_widgets.dart';
@@ -24,7 +27,9 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:random_string/random_string.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:stream_video/protobuf/video/sfu/models/models.pb.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
@@ -55,14 +60,66 @@ class _ChatPageState extends State<ChatPage> {
 
   late AudioRecord _audioRecorder;
   bool _permissionGranted = false;
-
+  String accessTokenForCall = "";
   // FlutterSoundPlayer? _player;
   // bool _isPlaying = false;
 
+  void _listenForIncomingCalls(BuildContext context, String myUserName) {
+    FirebaseFirestore.instance
+        .collection('calls')
+        .where('receiverId', isEqualTo: myUserName)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .listen((snapshot) async {
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        if (data['callType'] == 'video') {
+          _showIncomingCallDialog(
+            callId: doc.id,
+            callerId: data['callerId'],
+            streamCallId: data['streamCallId'],
+            context: context,
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _showIncomingCallDialog({
+    required String callId,
+    required String callerId,
+    required String streamCallId,
+    required BuildContext context,
+  }) async {
+    try {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+              // ... dialog code ...
+              ),
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "Error handling call: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.TOP,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 12.0,
+      );
+    }
+  }
+
   onLoad() async {
+    accessTokenForCall = await AllApiCalling.createUserAndGetAccessToken(
+        widget.userName, widget.name);
+    print("accessTokenForCall =============>>>>>> $accessTokenForCall");
+
     // await getTheSharedpreferenceData();
     // await getAndSetMessage();
-    // setState(() {});
+    setState(() {});
   }
 
   Future<bool> requestMicrophonePermission() async {
@@ -221,6 +278,9 @@ class _ChatPageState extends State<ChatPage> {
             userName: widget.userName),
         child:
             BlocBuilder<ChatblocBloc, ChatblocState>(builder: (context, State) {
+          // _listenForIncomingCalls(
+          //     context, BlocProvider.of<ChatblocBloc>(context).myUserName!);
+
           if (State is ChatBlocLoadingState) {
             return Scaffold(
               backgroundColor: Colors.white,
@@ -258,7 +318,7 @@ class _ChatPageState extends State<ChatPage> {
                   elevation: 1, // Optional: to show subtle shadow
                   actions: [
                     PopupMenuButton<String>(
-                      onSelected: (String value) {
+                      onSelected: (String value) async {
                         // Handle menu item click here
                         print("Selected: $value");
                         if (value == "Delete") {
@@ -280,9 +340,137 @@ class _ChatPageState extends State<ChatPage> {
                             );
                           }
                         }
-                        if (value == "Clear All Chat") {
-                          BlocProvider.of<ChatblocBloc>(context)
-                              .add(ClearChat());
+                        if (value == "Video Call") {
+                          // Handle video call action
+                          print("Video Call clicked");
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (_) => VideoCallPage(
+                          //       userId: widget.userName,
+                          //       userName: widget.name,
+                          //       userToken: accessTokenForCall,
+                          //       callId: widget.userName +
+                          // BlocProvider.of<ChatblocBloc>(context)
+                          //     .myUserName!,
+                          //     ),
+                          //   ),
+                          // );
+
+                          // if (value == "Video Call") {
+                          // Create a new Stream.io call
+                          final callId = const Uuid().v4();
+                          // final client = StreamVideo(
+                          //   'vxeyjhp4548f',
+                          //   user: User.regular(
+                          //     userId: BlocProvider.of<ChatblocBloc>(context)
+                          //         .myUserName!,
+                          //     name:
+                          //         BlocProvider.of<ChatblocBloc>(context).name,
+                          //   ),
+                          //   userToken: accessTokenForCall,
+                          // );
+
+                          StreamVideo.instance.connect(
+                            includeUserDetails: true,
+                          );
+
+                          try {
+                            var call = StreamVideo.instance.makeCall(
+                              callType: StreamCallType(),
+                              id: BlocProvider.of<ChatblocBloc>(context)
+                                  .myUserName!,
+                            );
+
+                            await call.getOrCreate(
+                              memberIds: [widget.userName],
+                              ringing: true,
+                            );
+
+                            // Created ahead
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CallScreen(call: call),
+                              ),
+                            );
+                          } catch (e) {
+                            debugPrint('Error joining or creating call: $e');
+                            debugPrint(e.toString());
+                          }
+                          // },
+                          // call.getOrCreate(memberIds: [
+                          // BlocProvider.of<ChatblocBloc>(context)
+                          //     .myUserName!,
+                          //   widget.userName
+                          // ]);
+// grant access to more users
+                          // await call.updateCallMembers(updateMembers: [
+                          //   UserInfo(id: widget.userName, role: 'call_member')
+                          // ]);
+// or
+                          // await call.addMembers([
+                          //   const UserInfo(id: 'charlie', role: 'call_member')
+                          // ]);
+// remove access from some users
+//                             await call
+//                                 .updateCallMembers(removeIds: ['charlie']);
+// // or
+//                             await call.removeMembers(['charlie']);
+
+                          // await call.join();
+
+                          // Create call invitation in Firestore
+                          //   await FirebaseFirestore.instance
+                          //       .collection('calls')
+                          //       .doc(callId)
+                          //       .set({
+                          //     'callerId': BlocProvider.of<ChatblocBloc>(context)
+                          //         .myUserName!,
+                          //     'receiverId': widget.userName,
+                          //     'status': 'pending',
+                          //     'callType': 'video',
+                          //     'createdAt': FieldValue.serverTimestamp(),
+                          //     'streamCallId': callId,
+                          //   });
+
+                          //   // Send push notification to receiver
+                          //   receiverFcmToken = await DataBasemethods()
+                          //       .getUserFcmToken(widget.userName);
+                          //   if (receiverFcmToken != null) {
+                          //     Sendnotificationservice.sendNotificationWithApi(
+                          //       token: receiverFcmToken,
+                          //       title: BlocProvider.of<ChatblocBloc>(context)
+                          //           .myUserName!,
+                          //       body: 'Incoming video call',
+                          //       data1: {"screen": "chatPage", "callId": callId},
+                          //     );
+                          //   }
+
+                          //   // Join the call immediately
+                          //   // await call.join();
+                          //   Navigator.push(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //       builder: (_) => VideoCallPage(
+                          //         userId: BlocProvider.of<ChatblocBloc>(context)
+                          //             .myUserName!,
+                          //         userName: widget.name,
+                          //         userToken: accessTokenForCall,
+                          //         callId: callId,
+                          //       ),
+                          //     ),
+                          //   );
+                          // }
+
+                          // You can implement your video call logic here
+                          // }
+                          // if (value == "Clear All Chat") {
+                          //   BlocProvider.of<ChatblocBloc>(context)
+                          //       .add(ClearChat());
+                          // }
+                          // }
+                          ;
                         }
                       },
                       itemBuilder: (BuildContext context) {
@@ -294,10 +482,10 @@ class _ChatPageState extends State<ChatPage> {
                               children: [Text("Delete"), Icon(Icons.delete)],
                             ),
                           ),
-                          // PopupMenuItem(
-                          //   value: "Clear All Chat",
-                          //   child: Text("Clear All Chat"),
-                          // ),
+                          PopupMenuItem(
+                            value: "Video Call",
+                            child: Text("Video Call"),
+                          ),
                           // PopupMenuItem(
                           //   value: "Mute",
                           //   child: Text("Mute"),

@@ -1,11 +1,13 @@
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/notification_services.dart';
 import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/pages/chat/ApiCalling/all_api_calling.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart' as stream_video;
 import 'package:random_string/random_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,6 +71,17 @@ class Authmethods {
     await SharedPreferenceHelper().saveUserName(userName);
     await SharedPreferenceHelper()
         .saveAccessToken(await notificationServices.getDeviceToken());
+    String Token = await AllApiCalling.createUserAndGetAccessToken(
+        userName, userDetails.displayName!);
+    await SharedPreferenceHelper().saveStreamToken(Token);
+
+    final client = stream_video.StreamVideo('vxeyjhp4548f',
+        user: stream_video.User.regular(
+            userId: userName,
+            role: 'admin',
+            name: userDetails
+                .displayName!), //stream_video.User.regular(userId: 'Bastila_Shan', role: 'admin', name: 'John Doe'),
+        userToken: Token);
 
     if (result != null) {
       Map<String, dynamic> userInfoMap = {

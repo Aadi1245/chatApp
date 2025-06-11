@@ -38,7 +38,17 @@ class SharedPreferenceHelper {
     return prefs.setString(accessToken, getAccesstoken);
   }
 
+  Future<bool> saveStreamToken(String getAccesstoken) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString(accessToken, getAccesstoken);
+  }
+
   Future<String?> getAccessToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(accessToken);
+  }
+
+  Future<String?> getStreamToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString(accessToken);
   }

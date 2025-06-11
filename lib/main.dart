@@ -13,6 +13,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 // import 'package:chattest/pages/onboarding.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 @pragma('vm:entry-point')
@@ -46,6 +48,21 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91aWlpYm54cWlvZWR2bHdmYndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjgyNDksImV4cCI6MjA2MjcwNDI0OX0.aEDqtb7nzWayG0XnyE_I7etCe84c2fK5oKWKLb4FKSw',
   );
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? userId = prefs.getString('username');
+  String? name = prefs.getString('name');
+
+  // final client = stream_video.StreamVideo(
+  //   'vxeyjhp4548f',
+  //   user: stream_video.User.regular(
+  //       userId: userId!,
+  //       role: 'admin',
+  //       name:
+  //           name), //stream_video.User.regular(userId: 'Bastila_Shan', role: 'admin', name: 'John Doe'),
+  //   userToken:
+  //       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Byb250by5nZXRzdHJlYW0uaW8iLCJzdWIiOiJ1c2VyL0Jhc3RpbGFfU2hhbiIsInVzZXJfaWQiOiJCYXN0aWxhX1NoYW4iLCJ2YWxpZGl0eV9pbl9zZWNvbmRzIjo2MDQ4MDAsImlhdCI6MTc0OTYzNTY2OCwiZXhwIjoxNzUwMjQwNDY4fQ.JcQRuUCs1934qz13a3O6v1RrNk1g2MN9bjS7eRnhM_k',
+  // );
   runApp(MyApp());
 }
 
@@ -56,10 +73,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Dash Chat Demo',
-        theme: AppTheme.lightTheme,
-        // ThemeData(
-        //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
-        // ),
+        theme: //AppTheme.lightTheme,
+            ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
+        ),
         home: Onbpoarding());
   }
 }
