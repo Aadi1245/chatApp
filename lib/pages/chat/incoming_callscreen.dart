@@ -1,54 +1,50 @@
-import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
-
 import 'package:chattest/pages/chat/call_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:stream_video/protobuf/video/sfu/models/models.pb.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 class IncomingCallScreen extends StatelessWidget {
   final Call call;
 
-  const IncomingCallScreen({Key? key, required this.call}) : super(key: key);
+  const IncomingCallScreen({super.key, required this.call});
+
+  void _acceptCall(BuildContext context) async {
+    await call.accept();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => CallScreen(call: call)),
+    );
+  }
+
+  void _rejectCall(BuildContext context) async {
+    await call.reject();
+    Navigator.of(context).pop();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final callState = call.state.value;
+    final callerId =
+        callState.callParticipants.firstWhere((p) => !p.isLocal).userId;
+
     return Scaffold(
-      backgroundColor: Colors.black87,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("📞 Incoming Call",
-                style: TextStyle(fontSize: 24, color: Colors.white)),
-            SizedBox(height: 16),
-            Text("Call ID: ${call.id}",
-                style: TextStyle(color: Colors.white70)),
-            SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  icon: Icon(Icons.call),
-                  label: Text("Accept"),
-                  onPressed: () async {
-                    await call.call().join();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CallScreen(call: call.call()),
-                      ),
-                    );
-                  },
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.call_end),
-                  label: Text("Decline"),
-                  onPressed: () {
-                    call.call().end(); // Optionally reject
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            )
+            Text("📞 Incoming call from: $callerId",
+                style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.call),
+              label: const Text("Accept"),
+              onPressed: () => _acceptCall(context),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.call_end),
+              label: const Text("Reject"),
+              onPressed: () => _rejectCall(context),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
           ],
         ),
       ),

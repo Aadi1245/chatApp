@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:chattest/Services/call_service.dart';
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/sendNotificationService.dart';
 import 'package:chattest/Services/shared_pref.dart';
@@ -343,134 +344,40 @@ class _ChatPageState extends State<ChatPage> {
                         if (value == "Video Call") {
                           // Handle video call action
                           print("Video Call clicked");
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (_) => VideoCallPage(
-                          //       userId: widget.userName,
-                          //       userName: widget.name,
-                          //       userToken: accessTokenForCall,
-                          //       callId: widget.userName +
-                          // BlocProvider.of<ChatblocBloc>(context)
-                          //     .myUserName!,
-                          //     ),
-                          //   ),
-                          // );
+                          final callId =
+                              '${BlocProvider.of<ChatblocBloc>(context).myUserName!}_${widget.userName}_${DateTime.now().millisecondsSinceEpoch}';
 
-                          // if (value == "Video Call") {
-                          // Create a new Stream.io call
-                          final callId = const Uuid().v4();
-                          // final client = StreamVideo(
-                          //   'vxeyjhp4548f',
-                          //   user: User.regular(
-                          //     userId: BlocProvider.of<ChatblocBloc>(context)
-                          //         .myUserName!,
-                          //     name:
-                          //         BlocProvider.of<ChatblocBloc>(context).name,
-                          //   ),
-                          //   userToken: accessTokenForCall,
-                          // );
-
-                          StreamVideo.instance.connect(
-                            includeUserDetails: true,
+                          CallService().startCall(
+                            context: context,
+                            callId: callId,
+                            calleeUserId: widget.userName,
                           );
 
-                          try {
-                            var call = StreamVideo.instance.makeCall(
-                              callType: StreamCallType(),
-                              id: BlocProvider.of<ChatblocBloc>(context)
-                                  .myUserName!,
-                            );
-
-                            await call.getOrCreate(
-                              memberIds: [widget.userName],
-                              ringing: true,
-                            );
-
-                            // Created ahead
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CallScreen(call: call),
-                              ),
-                            );
-                          } catch (e) {
-                            debugPrint('Error joining or creating call: $e');
-                            debugPrint(e.toString());
-                          }
-                          // },
-                          // call.getOrCreate(memberIds: [
-                          // BlocProvider.of<ChatblocBloc>(context)
-                          //     .myUserName!,
-                          //   widget.userName
-                          // ]);
-// grant access to more users
-                          // await call.updateCallMembers(updateMembers: [
-                          //   UserInfo(id: widget.userName, role: 'call_member')
-                          // ]);
-// or
-                          // await call.addMembers([
-                          //   const UserInfo(id: 'charlie', role: 'call_member')
-                          // ]);
-// remove access from some users
-//                             await call
-//                                 .updateCallMembers(removeIds: ['charlie']);
-// // or
-//                             await call.removeMembers(['charlie']);
-
-                          // await call.join();
-
-                          // Create call invitation in Firestore
-                          //   await FirebaseFirestore.instance
-                          //       .collection('calls')
-                          //       .doc(callId)
-                          //       .set({
-                          //     'callerId': BlocProvider.of<ChatblocBloc>(context)
+                          // try {
+                          //   var call = StreamVideo.instance.makeCall(
+                          //     callType: StreamCallType.custom("default"),
+                          //     id: BlocProvider.of<ChatblocBloc>(context)
                           //         .myUserName!,
-                          //     'receiverId': widget.userName,
-                          //     'status': 'pending',
-                          //     'callType': 'video',
-                          //     'createdAt': FieldValue.serverTimestamp(),
-                          //     'streamCallId': callId,
-                          //   });
+                          //   );
 
-                          //   // Send push notification to receiver
-                          //   receiverFcmToken = await DataBasemethods()
-                          //       .getUserFcmToken(widget.userName);
-                          //   if (receiverFcmToken != null) {
-                          //     Sendnotificationservice.sendNotificationWithApi(
-                          //       token: receiverFcmToken,
-                          //       title: BlocProvider.of<ChatblocBloc>(context)
-                          //           .myUserName!,
-                          //       body: 'Incoming video call',
-                          //       data1: {"screen": "chatPage", "callId": callId},
-                          //     );
-                          //   }
+                          //   await call.getOrCreate(
+                          //     memberIds: [widget.userName],
+                          //     ringing: true,
+                          //   );
 
-                          //   // Join the call immediately
-                          //   // await call.join();
+                          //   // Join the call after creation
+                          //   await call.join();
+
                           //   Navigator.push(
                           //     context,
                           //     MaterialPageRoute(
-                          //       builder: (_) => VideoCallPage(
-                          //         userId: BlocProvider.of<ChatblocBloc>(context)
-                          //             .myUserName!,
-                          //         userName: widget.name,
-                          //         userToken: accessTokenForCall,
-                          //         callId: callId,
-                          //       ),
+                          //       builder: (context) => CallScreen(call: call),
                           //     ),
                           //   );
+                          // } catch (e) {
+                          //   debugPrint('Error joining or creating call: $e');
+                          //   debugPrint(e.toString());
                           // }
-
-                          // You can implement your video call logic here
-                          // }
-                          // if (value == "Clear All Chat") {
-                          //   BlocProvider.of<ChatblocBloc>(context)
-                          //       .add(ClearChat());
-                          // }
-                          // }
-                          ;
                         }
                       },
                       itemBuilder: (BuildContext context) {

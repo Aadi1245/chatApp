@@ -1,10 +1,13 @@
+import 'package:chattest/Services/call_service.dart';
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/main.dart';
 import 'package:chattest/pages/chat/chat_page.dart';
 import 'package:chattest/pages/profile.dart';
 import 'package:chattest/widget/chat_room_list_tile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -93,6 +96,31 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
+  Future<void> setupStreamVideoAfterLogin({
+    required String userName,
+    required String userToken, // JWT from your backend
+    required String displayName,
+  }) async {
+    print(
+        "----------------->>>>>>>>>>setupStreamVideoAfterLogin called successfully");
+    final client = StreamVideo(
+      'vxeyjhp4548f', // replace with your actual API key
+      user: User.regular(
+        userId: userName,
+        name: displayName,
+      ),
+      userToken: userToken,
+    );
+
+    print(
+        "----------------->>>>>>>>>>${client.state.connection.toString()} called successfully");
+
+    // Now you're ready to make or receive calls.
+    // Save the client instance somewhere accessible (e.g., in a global service).
+    CallService().setClient(client);
+    CallService().init(navigatorKey);
+  }
+
   @override
   void initState() {
     onTheLoad();
@@ -107,6 +135,11 @@ class _HomePageState extends State<HomePage> {
     print(" after on the load chatRoomsStream-------->>>>${chatRoomsStream}");
 
     subName = myName!.split(" ");
+
+    print(
+        "----------------->>>>>>>>>>setupStreamVideoAfterLogin invoked successfully");
+    setupStreamVideoAfterLogin(
+        userName: myUserName!, userToken: Token!, displayName: myName!);
     setState(() {});
   }
 
@@ -259,13 +292,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  String? myUserName, myName, myEmail, myPicture;
+  String? myUserName, myName, myEmail, myPicture, Token;
   TextEditingController messageController = TextEditingController();
   getTheSharedpreferenceData() async {
     myUserName = await SharedPreferenceHelper().getUserName();
     myName = await SharedPreferenceHelper().getUserDisplayName();
     myEmail = await SharedPreferenceHelper().getUserEmail();
     myPicture = await SharedPreferenceHelper().getUserImage();
+    Token = await SharedPreferenceHelper().getStreamToken();
     setState(() {});
   }
 

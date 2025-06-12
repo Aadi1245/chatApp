@@ -1,18 +1,46 @@
+import 'package:chattest/Services/call_service.dart';
 import 'package:chattest/Services/database.dart';
 import 'package:chattest/Services/notification_services.dart';
 import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/main.dart';
 import 'package:chattest/pages/chat/ApiCalling/all_api_calling.dart';
 import 'package:chattest/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:stream_video_flutter/stream_video_flutter.dart' as stream_video;
-import 'package:random_string/random_string.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Authmethods {
   final FirebaseAuth auth = FirebaseAuth.instance;
+
+  // Future<void> initializeStreamVideo(
+  //     String userName, String token, String userDisplayName) async {
+  //   // Step 1: Define your user
+  //   final user = UserInfo(
+  //     id: userName,
+  //     role: 'admin',
+  //     name: userDetails.displayName,
+  //     image: userDetails.photoURL ?? '', // Optional
+  //   );
+
+  //   // Step 2: Initialize the StreamVideo SDK (only once)
+  //   await StreamVideo.init(
+  //     apiKey: 'vxeyjhp4548f',
+  //     options: const StreamVideoOptions(),
+  //   );
+
+  //   // Step 3: Connect the user
+  //   await StreamVideo.instance.connectUser(
+  //     user: user,
+  //     token: token, // Make sure this is a valid JWT token from your backend
+  //   );
+
+  //   // Step 4: Initialize your CallService (handles incoming call listeners, etc.)
+  //   CallService()
+  //       .init(navigatorKey); // Make sure navigatorKey is defined globally
+  // }
 
   getCurrenUser() async {
     return await auth.currentUser;
@@ -75,14 +103,24 @@ class Authmethods {
         userName, userDetails.displayName!);
     await SharedPreferenceHelper().saveStreamToken(Token);
 
-    final client = stream_video.StreamVideo('vxeyjhp4548f',
-        user: stream_video.User.regular(
-            userId: userName,
-            role: 'admin',
-            name: userDetails
-                .displayName!), //stream_video.User.regular(userId: 'Bastila_Shan', role: 'admin', name: 'John Doe'),
-        userToken: Token);
+    // final user = stream_video.User.regular(
+    //     userId: userName, role: 'admin', name: userDetails.displayName!);
 
+//     final client = stream_video.StreamVideo('vxeyjhp4548f',
+//         user:
+//             user, //stream_video.User.regular(userId: 'Bastila_Shan', role: 'admin', name: 'John Doe'),
+//         userToken: Token);
+
+// // Initialize StreamVideo once (usually in main or startup file)
+//     await StreamVideo.init(
+//       apiKey: 'vxeyjhp4548f',
+//       options: const StreamVideoOptions(),
+//     );
+
+// // Then connect the user
+
+//     await StreamVideo.instance.connectUser(user, Token);
+//     CallService().init(navigatorKey);
     if (result != null) {
       Map<String, dynamic> userInfoMap = {
         "Name": userDetails!.displayName,

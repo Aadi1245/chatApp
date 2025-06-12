@@ -26,6 +26,7 @@ class _OnbpoardingState extends State<Onbpoarding> {
     FcmService.firebaseInit();
     NotificationServices().firebaseInit(context);
     NotificationServices().setupInteractMessage(context);
+
     super.initState();
   }
 

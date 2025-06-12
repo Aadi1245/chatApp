@@ -39,8 +39,8 @@ class _ChatmessagetileState extends State<Chatmessagetile>
 
   bool isRecording = false;
 
-  late AudioRecord _audioRecorder;
-  bool _permissionGranted = false;
+  // late AudioRecord _audioRecorder;
+  // bool _permissionGranted = false;
 
   FlutterSoundPlayer? _player;
 
@@ -50,7 +50,7 @@ class _ChatmessagetileState extends State<Chatmessagetile>
 
   @override
   void dispose() {
-    _audioRecorder.dispose();
+    // _audioRecorder.dispose();
     _player!.stopPlayer();
     _progressSubscription?.cancel();
     _player?.closePlayer();

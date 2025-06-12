@@ -27,6 +27,7 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
           projectId: "chatup-9c474"));
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -71,6 +72,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Dash Chat Demo',
         theme: //AppTheme.lightTheme,

@@ -10,7 +10,7 @@ class AllApiCalling {
       String userId, String name) async {
     final response = await http.post(
       Uri.parse(
-          'https://28ce-2401-4900-1c08-563b-dd76-6128-9b23-ddda.ngrok-free.app/create-user-token'),
+          'https://b784-103-171-189-215.ngrok-free.app/create-user-token'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'userId': userId, 'name': name}),
     );
