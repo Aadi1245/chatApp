@@ -1,3 +1,5 @@
+import 'package:chattest/app_theme.dart';
+import 'package:chattest/NewTest/signup_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginWithOtpScreen extends StatefulWidget {
@@ -29,13 +31,13 @@ class _LoginWithOtpScreenState extends State<LoginWithOtpScreen>
     super.initState();
 
     _textController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 900));
     _arrowController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 900));
     _fieldController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 900));
     _btnController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 900));
 
     _textOffset = Tween<Offset>(begin: Offset(0, -2), end: Offset.zero).animate(
       CurvedAnimation(parent: _textController, curve: Curves.bounceOut),
@@ -100,14 +102,22 @@ class _LoginWithOtpScreenState extends State<LoginWithOtpScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Image.asset(
+                  'assets/images/gossip_logo.png', // Replace with your actual path
+                  height: 100,
+                ),
+
+                SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+
                 // 1. TEXT
                 if (showText)
                   SlideTransition(
                     position: _textOffset,
                     child: Text(
-                      "Enter your phone number",
+                      "Enter your mobile number to get started",
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize:
+                            AppTheme.lightTheme.textTheme.titleLarge!.fontSize,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                         shadows: [
@@ -121,7 +131,8 @@ class _LoginWithOtpScreenState extends State<LoginWithOtpScreen>
                       textAlign: TextAlign.center,
                     ),
                   ),
-                if (showText) SizedBox(height: 30),
+                if (showText)
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
 
                 // 2. ARROW
                 if (showArrow)
@@ -132,7 +143,8 @@ class _LoginWithOtpScreenState extends State<LoginWithOtpScreen>
                       height: 70,
                     ),
                   ),
-                if (showArrow) SizedBox(height: 30),
+                if (showArrow)
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
 
                 // 3. TEXT FIELD
                 if (showField)
@@ -159,41 +171,64 @@ class _LoginWithOtpScreenState extends State<LoginWithOtpScreen>
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide.none),
                           contentPadding: EdgeInsets.symmetric(
-                              vertical: 18, horizontal: 20),
+                              vertical: 12, horizontal: 20),
                           filled: true,
                           fillColor: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                if (showField) SizedBox(height: 24),
+                if (showField)
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
 
                 // 4. BUTTON
                 if (showBtn)
                   SlideTransition(
                     position: _btnOffset,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor:
-                              const Color.fromARGB(255, 250, 103, 5),
-                          elevation: 6,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                    child: Column(
+                      children: [
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor:
+                                  const Color.fromARGB(255, 250, 103, 5),
+                              elevation: 6,
+                              padding: EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: () {
+                              // Handle login
+                            },
+                            child: Text(
+                              "Login",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
-                        onPressed: () {
-                          // Handle register
-                        },
-                        child: Text(
-                          "Register",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w600),
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.03),
+
+                        // Signup TextButton
+                        TextButton(
+                          onPressed: () {
+                            // Navigate to Signup screen
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => SignupScreen()));
+                          },
+                          child: Text(
+                            "Don't have an account? Sign up",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
               ],
