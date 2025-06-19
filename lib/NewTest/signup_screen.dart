@@ -1,5 +1,6 @@
 import 'package:chattest/NewTest/home_screen.dart';
 import 'package:chattest/NewTest/login_with_otp_screen.dart';
+import 'package:chattest/NewTest/userInfo.dart';
 import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -161,7 +162,7 @@ class _SignupScreenState extends State<SignupScreen>
                               // Handle register
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => HomeScreen(),
+                                  builder: (context) => UserInfo(),
                                 ),
                               );
                             },
