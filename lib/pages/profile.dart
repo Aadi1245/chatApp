@@ -3,8 +3,7 @@ import 'package:chattest/Services/database.dart';
 import 'package:chattest/pages/starter/onboarding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import '../Services/shared_pref.dart';
+import 'package:chattest/Services/shared_pref.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -37,331 +36,222 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey,
       body: Container(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              margin: EdgeInsets.only(top: 40, left: 10, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Icon(
-                        color: Colors.white,
-                        Icons.arrow_back,
-                        size: 30,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo.shade800, Colors.blueGrey.shade600],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.25,
-                  ),
-                  Text(
-                    "Profile",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+                    SizedBox(width: 20),
+                    Text(
+                      "Profile",
+                      style: TextStyle(
                         fontSize: 28,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white),
-                  ),
-                ],
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.only(left: 25, right: 20),
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30))),
-                child: myPicture == null
-                    ? Center(
-                        child: CircularProgressIndicator(
-                        color: Colors.blueGrey,
-                      ))
-                    : Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: myPicture != null
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Profile Image
+                        Container(
+                          margin: EdgeInsets.only(top: 20),
+                          child: CircleAvatar(
+                            radius: 70,
+                            backgroundColor: Colors.grey.shade200,
+                            child: ClipOval(
+                              child: myPicture != null && myPicture!.isNotEmpty
                                   ? Image.network(
                                       myPicture!,
-                                      height: 150,
-                                      width: 150,
+                                      height: 140,
+                                      width: 140,
                                       fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.person,
+                                          size: 70,
+                                          color: Colors.grey.shade500,
+                                        );
+                                      },
                                     )
-                                  : CircularProgressIndicator(),
+                                  : Icon(
+                                      Icons.person,
+                                      size: 70,
+                                      color: Colors.grey.shade500,
+                                    ),
                             ),
                           ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          Material(
-                            color: Colors.white,
-                            elevation: 3,
-                            borderRadius: BorderRadius.circular(5),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Icon(
-                                    color: Colors.blue.shade100,
-                                    Icons.person,
-                                    size: 30,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.only(left: 10),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        "Name",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800),
-                                      ),
-                                    ),
-                                    Container(
-                                      alignment: Alignment.centerLeft,
-                                      padding: EdgeInsets.only(
-                                          left: 10,
-                                          top: 5,
-                                          bottom: 5,
-                                          right: 5),
-                                      // height:
-                                      //     50, //MediaQuery.of(context).size.height,
-                                      // width: MediaQuery.of(context).size.width,
-                                      child: Text(
-                                        "${myName}",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w800),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 30,
-                          ),
-                          Material(
-                            color: Colors.white,
-                            elevation: 3,
-                            borderRadius: BorderRadius.circular(5),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Icon(
-                                    color: Colors.blue.shade100,
-                                    Icons.email,
-                                    size: 30,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.only(left: 10),
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          "email",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w800),
-                                        ),
-                                      ),
-                                      Container(
-                                        alignment: Alignment.centerLeft,
-                                        padding: EdgeInsets.only(
-                                            left: 10,
-                                            top: 5,
-                                            bottom: 5,
-                                            right: 5),
-                                        // height:
-                                        //     50, //MediaQuery.of(context).size.height,
-                                        // width: MediaQuery.of(context).size.width,
-                                        child: Text(
-                                          "${myEmail}",
-                                          // textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w800),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 30,
-                          ),
-                          InkWell(
-                            onTap: () async {
-                              await Authmethods().signOut();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Onbpoarding()));
-                            },
-                            child: Material(
-                              color: Colors.white,
-                              elevation: 3,
-                              borderRadius: BorderRadius.circular(5),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: Icon(
-                                      color: Colors.blue.shade100,
-                                      Icons.logout,
-                                      size: 30,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Container(
-                                    alignment: Alignment.centerLeft,
-                                    padding: EdgeInsets.only(
-                                        left: 10, top: 5, bottom: 5, right: 5),
-                                    // height:
-                                    //     50, //MediaQuery.of(context).size.height,
-                                    // width: MediaQuery.of(context).size.width,
-                                    child: Text(
-                                      "LogOut",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800),
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Container(
-                                    padding: EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: Icon(
-                                      color: Colors.black,
-                                      Icons.arrow_forward_ios,
-                                      size: 30,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 30,
-                          ),
-                          InkWell(
-                            onTap: () async {
-                              await Authmethods().delete();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Onbpoarding()));
-                            },
-                            child: Material(
-                              color: Colors.white,
-                              elevation: 3,
-                              borderRadius: BorderRadius.circular(5),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: Icon(
-                                      color: Colors.blue.shade100,
-                                      Icons.delete,
-                                      size: 30,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Container(
-                                    alignment: Alignment.centerLeft,
-                                    padding: EdgeInsets.only(
-                                        left: 10, top: 5, bottom: 5, right: 5),
-                                    // height:
-                                    //     50, //MediaQuery.of(context).size.height,
-                                    // width: MediaQuery.of(context).size.width,
-                                    child: Text(
-                                      "Delete Account",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800),
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Container(
-                                    padding: EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: Icon(
-                                      color: Colors.black,
-                                      Icons.arrow_forward_ios,
-                                      size: 30,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: 30),
+                        // Name Card
+                        _buildInfoCard(
+                          icon: Icons.person,
+                          label: "Name",
+                          value: myName ?? "Not set",
+                        ),
+                        SizedBox(height: 20),
+                        // Email Card
+                        _buildInfoCard(
+                          icon: Icons.email,
+                          label: "Email",
+                          value: myEmail ?? "Not set",
+                        ),
+                        SizedBox(height: 30),
+                        // Logout Button
+                        _buildActionButton(
+                          icon: Icons.logout,
+                          text: "Log Out",
+                          onTap: () async {
+                            await Authmethods().signOut();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Onbpoarding()),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        // Delete Account Button
+                        _buildActionButton(
+                          icon: Icons.delete,
+                          text: "Delete Account",
+                          textColor: Colors.red,
+                          onTap: () async {
+                            await Authmethods().delete();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Onbpoarding()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            )
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        leading: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.blue.shade400, size: 24),
+        ),
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String text,
+    Color? textColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ListTile(
+          contentPadding: EdgeInsets.all(16),
+          leading: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.red.shade400, size: 24),
+          ),
+          title: Text(
+            text,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: textColor ?? Colors.black87,
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 18,
+            color: Colors.grey.shade600,
+          ),
         ),
       ),
     );
