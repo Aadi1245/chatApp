@@ -49,21 +49,17 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
-  // String? myUserName, myName, myEmail, myPicture, chatRoomId,
-
+class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   String? messageId;
   File? selectedImage;
   final ImagePicker _picker = ImagePicker();
   TextEditingController messageController = TextEditingController();
-
-  // bool isRecording = false;
+  late AnimationController _animationController;
+  late Animation<double> _pulseAnimation;
 
   late AudioRecord _audioRecorder;
   bool _permissionGranted = false;
   String accessTokenForCall = "";
-  // FlutterSoundPlayer? _player;
-  // bool _isPlaying = false;
 
   void _listenForIncomingCalls(BuildContext context, String myUserName) {
     FirebaseFirestore.instance
@@ -97,8 +93,22 @@ class _ChatPageState extends State<ChatPage> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-              // ... dialog code ...
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text('Incoming Call'),
+            content: Text('$callerId is calling you...'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Decline'),
               ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Accept'),
+              ),
+            ],
+          ),
         );
       }
     } catch (e) {
@@ -114,49 +124,45 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   onLoad() async {
-    accessTokenForCall = await AllApiCalling.createUserAndGetAccessToken(
-        widget.userName, widget.name);
-    print("accessTokenForCall =============>>>>>> $accessTokenForCall");
-
-    // await getTheSharedpreferenceData();
-    // await getAndSetMessage();
     setState(() {});
   }
 
   Future<bool> requestMicrophonePermission() async {
-    // Request microphone permission
     final status = await Permission.microphone.request();
 
-    // Check the result
     if (status.isGranted) {
-      return true; // Permission granted, recording can proceed
+      return true;
     } else if (status.isDenied) {
-      // Permission denied, but not permanently. You can request again.
       return false;
     } else if (status.isPermanentlyDenied) {
-      // Permission permanently denied. Prompt the user to enable it in settings.
-      await openAppSettings(); // Opens the app settings page
+      await openAppSettings();
       return false;
     }
 
-    return false; // Default case
+    return false;
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     onLoad();
-    // _player = FlutterSoundPlayer();
-    // _initPlayer();
     _audioRecorder = AudioRecord();
     _initRecorder();
     GifKeyboardInput.startListening();
+
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
     super.initState();
   }
-
-  // Future<void> _initPlayer() async {
-  //   await _player!.openPlayer();
-  // }
 
   Future<void> _initRecorder() async {
     _permissionGranted = await requestMicrophonePermission();
@@ -165,10 +171,10 @@ class _ChatPageState extends State<ChatPage> {
     } else {
       if (mounted) {
         Fluttertoast.showToast(
-          msg: "Message deleted successfully",
+          msg: "Microphone permission required",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.TOP,
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.orange,
           textColor: Colors.white,
           fontSize: 12.0,
         );
@@ -181,7 +187,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _audioRecorder.dispose();
-
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -190,10 +196,6 @@ class _ChatPageState extends State<ChatPage> {
     return "${users[0]}_${users[1]}";
   }
 
-  // deleteSelectedMessage(String chatRoomId, List<String> messageIds) async {
-  //   await DataBasemethods().deleteSelectedMessages(chatRoomId, messageIds);
-  // }
-
   addMessage(
       {bool? sendClicked,
       String? myUserName,
@@ -201,8 +203,8 @@ class _ChatPageState extends State<ChatPage> {
       String? chatRoomId,
       String? fcmToken,
       String? gifUrl}) async {
-    if (messageController.text != "") {
-      String message = messageController.text;
+    if (messageController.text.trim().isNotEmpty) {
+      String message = messageController.text.trim();
       messageController.text = "";
       DateTime now = DateTime.now();
       String formatedDate = DateFormat("h:mma").format(now);
@@ -245,14 +247,10 @@ class _ChatPageState extends State<ChatPage> {
         };
 
         DataBasemethods().updateLastMessageSent(chatRoomId, lastMessageInfoMap);
-
-        if (sendClicked!) {
-          message = "";
-        }
       });
+
       receiverFcmToken =
           await DataBasemethods().getUserFcmToken(widget.userName);
-      print(" receiverFcmToken ------------>>>>>>> ${receiverFcmToken}");
       receiverFcmToken != null
           ? Sendnotificationservice.sendNotificationWithApi(
               token: receiverFcmToken,
@@ -260,347 +258,420 @@ class _ChatPageState extends State<ChatPage> {
               body: message,
               data1: {"screen": "chatPage"})
           : "";
+
       setState(() {
         replyMessage = "";
+        mic = true;
       });
     }
   }
 
   String replyMessage = "", replypicture = "";
   bool isSendByMe = false;
-
   bool mic = true, _isRecording = false;
+  String? receiverFcmToken;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-        create: (context) => ChatblocBloc(
-            name: widget.name,
-            profileUrl: widget.profileUrl,
-            userName: widget.userName),
-        child:
-            BlocBuilder<ChatblocBloc, ChatblocState>(builder: (context, State) {
-          // _listenForIncomingCalls(
-          //     context, BlocProvider.of<ChatblocBloc>(context).myUserName!);
-
-          if (State is ChatBlocLoadingState) {
+      create: (context) => ChatblocBloc(
+          name: widget.name,
+          profileUrl: widget.profileUrl,
+          userName: widget.userName),
+      child: BlocBuilder<ChatblocBloc, ChatblocState>(
+        builder: (context, state) {
+          if (state is ChatBlocLoadingState) {
             return Scaffold(
-              backgroundColor: Colors.white,
+              backgroundColor: Color(0xFF1A1A2E),
               body: Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00D4AA)),
+                ),
               ),
             );
-          } else if (State is ChatBlocFailedState) {
+          } else if (state is ChatBlocFailedState) {
             return Scaffold(
-                backgroundColor: Colors.white,
-                body: Center(
-                  child: Text("Something went wrong!"),
-                ));
-          } else {
-            return Scaffold(
-                backgroundColor: Colors.blueGrey,
-                resizeToAvoidBottomInset: true,
-                appBar: AppBar(
-                  title: Text(
-                    widget.name,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              backgroundColor: Color(0xFF1A1A2E),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
                     ),
-                  ),
-                  leading: IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      icon: Icon(color: Colors.white, Icons.arrow_back)),
-                  backgroundColor:
-                      Colors.blueGrey, // Optional: for contrast with icon
-                  elevation: 1, // Optional: to show subtle shadow
-                  actions: [
-                    PopupMenuButton<String>(
-                      onSelected: (String value) async {
-                        // Handle menu item click here
-                        print("Selected: $value");
-                        if (value == "Delete") {
-                          if (BlocProvider.of<ChatblocBloc>(context)
-                              .messageIds
-                              .isNotEmpty) {
-                            BlocProvider.of<ChatblocBloc>(context).add(
-                                deleteSelectedMsg(
-                                    BlocProvider.of<ChatblocBloc>(context)
-                                        .messageIds));
-
-                            Fluttertoast.showToast(
-                              msg: "Message deleted successfully",
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.TOP,
-                              backgroundColor: Colors.green,
-                              textColor: Colors.white,
-                              fontSize: 12.0,
-                            );
-                          }
-                        }
-                        if (value == "Video Call") {
-                          // Handle video call action
-                          print("Video Call clicked");
-                          final callId =
-                              '${BlocProvider.of<ChatblocBloc>(context).myUserName!}_${widget.userName}_${DateTime.now().millisecondsSinceEpoch}';
-
-                          CallService().startCall(
-                            context: context,
-                            callId: callId,
-                            calleeUserId: widget.userName,
-                          );
-
-                          // try {
-                          //   var call = StreamVideo.instance.makeCall(
-                          //     callType: StreamCallType.custom("default"),
-                          //     id: BlocProvider.of<ChatblocBloc>(context)
-                          //         .myUserName!,
-                          //   );
-
-                          //   await call.getOrCreate(
-                          //     memberIds: [widget.userName],
-                          //     ringing: true,
-                          //   );
-
-                          //   // Join the call after creation
-                          //   await call.join();
-
-                          //   Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //       builder: (context) => CallScreen(call: call),
-                          //     ),
-                          //   );
-                          // } catch (e) {
-                          //   debugPrint('Error joining or creating call: $e');
-                          //   debugPrint(e.toString());
-                          // }
-                        }
-                      },
-                      itemBuilder: (BuildContext context) {
-                        return [
-                          PopupMenuItem(
-                            value: "Delete",
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [Text("Delete"), Icon(Icons.delete)],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: "Video Call",
-                            child: Text("Video Call"),
-                          ),
-                          // PopupMenuItem(
-                          //   value: "Mute",
-                          //   child: Text("Mute"),
-                          // ),
-                        ];
-                      },
-                      icon: Icon(Icons.more_vert,
-                          color: Colors.white), // 3-dot icon
+                    SizedBox(height: 16),
+                    Text(
+                      "Something went wrong!",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
-                body: Container(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.only(left: 5, right: 5),
-                          decoration: BoxDecoration(
+              ),
+            );
+          } else {
+            return Scaffold(
+              backgroundColor: Color(0xFF1A1A2E),
+              resizeToAvoidBottomInset: true,
+              appBar: AppBar(
+                elevation: 0,
+                backgroundColor: Color(0xFF16213E),
+                leading: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.arrow_back_ios,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Hero(
+                      tag: 'profile_${widget.userName}',
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xFF00D4AA),
+                        backgroundImage: widget.profileUrl.isNotEmpty
+                            ? NetworkImage(widget.profileUrl)
+                            : null,
+                        child: widget.profileUrl.isEmpty
+                            ? Text(
+                                widget.name.isNotEmpty
+                                    ? widget.name[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.name,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(30),
-                                  topLeft: Radius.circular(30))),
-                          child: Column(
+                            ),
+                          ),
+                          Text(
+                            'Online',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF00D4AA),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.videocam, color: Colors.white),
+                    onPressed: () {
+                      final callId =
+                          '${BlocProvider.of<ChatblocBloc>(context).myUserName!}_${widget.userName}_${DateTime.now().millisecondsSinceEpoch}';
+                      CallService().startCall(
+                        context: context,
+                        callId: callId,
+                        calleeUserId: widget.userName,
+                      );
+                    },
+                  ),
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.white),
+                    color: Color(0xFF16213E),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onSelected: (String value) async {
+                      if (value == "Delete") {
+                        if (BlocProvider.of<ChatblocBloc>(context)
+                            .messageIds
+                            .isNotEmpty) {
+                          BlocProvider.of<ChatblocBloc>(context).add(
+                              deleteSelectedMsg(
+                                  BlocProvider.of<ChatblocBloc>(context)
+                                      .messageIds));
+                          Fluttertoast.showToast(
+                            msg: "Messages deleted successfully",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.TOP,
+                            backgroundColor: Color(0xFF00D4AA),
+                            textColor: Colors.white,
+                            fontSize: 12.0,
+                          );
+                        }
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return [
+                        PopupMenuItem(
+                          value: "Delete",
+                          child: Row(
                             children: [
-                              Expanded(
-                                // height: MediaQuery.of(context).size.height * 0.78,
-                                child: ChatMessageWidget(
-                                  widget.profileUrl,
-                                  BlocProvider.of<ChatblocBloc>(context)
-                                      .messageStream!,
-                                  BlocProvider.of<ChatblocBloc>(context)
-                                      .myUserName!,
-                                  BlocProvider.of<ChatblocBloc>(context),
-                                  showReply: (message, sendByMe, Picture) {
-                                    // m
-                                    print(
-                                        "=<><><><><>reply call back<><>>><><> ${message}----->>>>${sendByMe}=======${Picture}");
-                                    replyMessage = message;
-                                    isSendByMe = sendByMe;
-                                    replypicture = Picture;
-                                    setState(() {});
-                                  },
-                                ),
+                              Icon(Icons.delete, color: Colors.red, size: 20),
+                              SizedBox(width: 8),
+                              Text("Delete Selected",
+                                  style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ];
+                    },
+                  ),
+                ],
+              ),
+              body: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF16213E),
+                      Color(0xFF1A1A2E),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(top: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ChatMessageWidget(
+                                widget.profileUrl,
+                                BlocProvider.of<ChatblocBloc>(context)
+                                    .messageStream!,
+                                BlocProvider.of<ChatblocBloc>(context)
+                                    .myUserName!,
+                                BlocProvider.of<ChatblocBloc>(context),
+                                showReply: (message, sendByMe, picture) {
+                                  replyMessage = message;
+                                  isSendByMe = sendByMe;
+                                  replypicture = picture;
+                                  setState(() {});
+                                },
                               ),
-                              Visibility(
-                                visible: _isRecording,
-                                child: Image.asset(
-                                  'assets/images/audio_gif2.gif',
-                                  height: 80,
-                                ),
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  // Text field with attachment icon
-                                  Expanded(
-                                    child: Container(
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 10),
-                                      margin: EdgeInsets.only(bottom: 6),
+                            ),
+
+                            // Recording animation
+                            AnimatedContainer(
+                              duration: Duration(milliseconds: 300),
+                              height: _isRecording ? 100 : 0,
+                              child: _isRecording
+                                  ? Container(
+                                      padding: EdgeInsets.all(20),
                                       decoration: BoxDecoration(
-                                        color: Color(0xFFE0F2F1),
-                                        borderRadius: BorderRadius.circular(25),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black12,
-                                            blurRadius: 4,
-                                            offset: Offset(0, 2),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Color(0xFF00D4AA).withOpacity(0.1),
+                                            Color(0xFF00D4AA).withOpacity(0.05),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          AnimatedBuilder(
+                                            animation: _pulseAnimation,
+                                            builder: (context, child) {
+                                              return Transform.scale(
+                                                scale: _pulseAnimation.value,
+                                                child: Container(
+                                                  width: 20,
+                                                  height: 20,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            "Recording...",
+                                            style: TextStyle(
+                                              color: Color(0xFF00D4AA),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ],
                                       ),
-                                      child: Column(
-                                        children: [
-                                          Visibility(
-                                            visible:
-                                                replyMessage.trim().isNotEmpty,
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                    )
+                                  : SizedBox.shrink(),
+                            ),
+
+                            // Message input area
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(0),
+                                  topRight: Radius.circular(0),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: Offset(0, -2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  // Reply preview
+                                  AnimatedContainer(
+                                    duration: Duration(milliseconds: 300),
+                                    height:
+                                        replyMessage.trim().isNotEmpty ? 80 : 0,
+                                    child: replyMessage.trim().isNotEmpty
+                                        ? Container(
+                                            margin: EdgeInsets.only(bottom: 12),
+                                            padding: EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Color(0xFF00D4AA)
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: Color(0xFF00D4AA)
+                                                    .withOpacity(0.3),
+                                              ),
+                                            ),
+                                            child: Row(
                                               children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          top: 8.0, left: 8.0),
-                                                  child: Text(
-                                                    isSendByMe
-                                                        ? BlocProvider.of<
-                                                                    ChatblocBloc>(
-                                                                context)
-                                                            .myName!
-                                                        : widget.name,
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold),
+                                                Container(
+                                                  width: 4,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFF00D4AA),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            2),
                                                   ),
                                                 ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    replyMessage
-                                                            .contains(".aac")
-                                                        ? CommonWidgets
-                                                            .audioReplyMessage(
-                                                                replypicture)
-                                                        : replyMessage.contains(
-                                                                ".jpg")
-                                                            ? Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .all(
-                                                                        8.0),
-                                                                child:
-                                                                    ClipRRect(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10), // half of 50 for circle
-                                                                  child: Image
-                                                                      .network(
-                                                                    replyMessage,
-                                                                    height: 50,
-                                                                    width: 50,
-                                                                    fit: BoxFit
-                                                                        .cover,
-                                                                  ),
-                                                                ),
-                                                              )
-                                                            : replyMessage
-                                                                    .contains(
-                                                                        ".gif")
-                                                                ? Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(
-                                                                            8.0),
-                                                                    child:
-                                                                        ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              10), // half of 50 for circle
-                                                                      child: Image
-                                                                          .network(
-                                                                        replyMessage,
-                                                                        height:
-                                                                            50,
-                                                                        width:
-                                                                            50,
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                      ),
-                                                                    ),
-                                                                  )
-                                                                : Expanded(
-                                                                    child:
-                                                                        Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .all(
-                                                                          8.0),
-                                                                      child:
-                                                                          Text(
-                                                                        replyMessage,
-                                                                        maxLines:
-                                                                            3,
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                        style: TextStyle(
-                                                                            fontSize:
-                                                                                16,
-                                                                            color:
-                                                                                Colors.black),
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                    IconButton(
-                                                        onPressed: () {
-                                                          replyMessage = "";
-                                                          setState(() {});
-                                                        },
-                                                        icon: Icon(
-                                                            Icons.cancel_sharp))
-                                                  ],
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        isSendByMe
+                                                            ? BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .myName!
+                                                            : widget.name,
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Color(0xFF00D4AA),
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _getReplyPreview(
+                                                              replyMessage),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors
+                                                                .grey[600],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  icon: Icon(Icons.close,
+                                                      size: 20,
+                                                      color: Colors.grey),
+                                                  onPressed: () {
+                                                    replyMessage = "";
+                                                    setState(() {});
+                                                  },
                                                 ),
                                               ],
                                             ),
+                                          )
+                                        : SizedBox.shrink(),
+                                  ),
+
+                                  // Input row
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF8F9FA),
+                                            borderRadius:
+                                                BorderRadius.circular(25),
+                                            border: Border.all(
+                                              color: Color(0xFFE9ECEF),
+                                            ),
                                           ),
-                                          Row(
+                                          child: Row(
                                             children: [
                                               IconButton(
-                                                icon: Icon(Icons.gif,
-                                                    color: Colors.grey,
-                                                    size: 30),
+                                                icon: Icon(
+                                                  Icons.gif_box,
+                                                  color: Color(0xFF00D4AA),
+                                                  size: 28,
+                                                ),
                                                 onPressed: () async {
                                                   final gif =
                                                       await GiphyGet.getGif(
                                                     context: context,
                                                     apiKey:
-                                                        "fmRcfcCrA0eJVznbt9epr4pIDLh6isoO", // Replace with your Giphy API Key
+                                                        "fmRcfcCrA0eJVznbt9epr4pIDLh6isoO",
                                                     lang: GiphyLanguage.english,
                                                     randomID: Uuid().v4(),
-                                                    tabColor: Colors.purple,
+                                                    tabColor: Color(0xFF00D4AA),
                                                   );
 
                                                   if (gif != null) {
-                                                    // Step 1: Download GIF as File
                                                     final response = await http
                                                         .get(Uri.parse(gif
                                                             .images!
@@ -616,8 +687,6 @@ class _ChatPageState extends State<ChatPage> {
                                                         .writeAsBytes(
                                                             response.bodyBytes);
 
-                                                    print(
-                                                        "File of GIF--------=======>>>> ${selectedGifFile}");
                                                     BlocProvider.of<
                                                                 ChatblocBloc>(
                                                             context)
@@ -640,176 +709,184 @@ class _ChatPageState extends State<ChatPage> {
                                               ),
                                               Expanded(
                                                 child: TextField(
-                                                  onChanged: (value) {
-                                                    if (value
-                                                        .trim()
-                                                        .isNotEmpty) {
-                                                      mic = false;
-                                                    } else {
-                                                      mic = true;
-                                                    }
-
-                                                    setState(() {});
-                                                  },
                                                   controller: messageController,
                                                   keyboardType:
                                                       TextInputType.multiline,
                                                   textInputAction:
                                                       TextInputAction.newline,
                                                   maxLines: null,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      mic =
+                                                          value.trim().isEmpty;
+                                                    });
+                                                  },
                                                   decoration: InputDecoration(
                                                     hintText:
                                                         "Type a message...",
+                                                    hintStyle: TextStyle(
+                                                      color: Colors.grey[500],
+                                                      fontSize: 16,
+                                                    ),
                                                     border: InputBorder.none,
+                                                    contentPadding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 12,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                              GestureDetector(
-                                                onTap: () async {
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.attach_file,
+                                                  color: Color(0xFF00D4AA),
+                                                ),
+                                                onPressed: () async {
                                                   var image =
                                                       await _picker.pickImage(
                                                           source: ImageSource
                                                               .gallery);
-                                                  selectedImage =
-                                                      File(image!.path);
-                                                  BlocProvider.of<ChatblocBloc>(
-                                                          context)
-                                                      .uploadImage(
-                                                          context,
-                                                          BlocProvider.of<
-                                                                      ChatblocBloc>(
-                                                                  context)
-                                                              .myUserName!,
-                                                          BlocProvider.of<
-                                                                      ChatblocBloc>(
-                                                                  context)
-                                                              .myPicture!,
-                                                          BlocProvider.of<
-                                                                      ChatblocBloc>(
-                                                                  context)
-                                                              .chatRoomId!,
-                                                          selectedImage!);
-                                                  setState(() {});
+                                                  if (image != null) {
+                                                    selectedImage =
+                                                        File(image.path);
+                                                    BlocProvider.of<
+                                                                ChatblocBloc>(
+                                                            context)
+                                                        .uploadImage(
+                                                            context,
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .myUserName!,
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .myPicture!,
+                                                            BlocProvider.of<
+                                                                        ChatblocBloc>(
+                                                                    context)
+                                                                .chatRoomId!,
+                                                            selectedImage!);
+                                                  }
                                                 },
-                                                child: Icon(Icons.attach_file,
-                                                    color: Colors.grey[700]),
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-
-                                  // Send button
-                                  Container(
-                                    margin: EdgeInsets.only(bottom: 6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.blueGrey,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
                                         ),
-                                      ],
-                                    ),
-                                    child: GestureDetector(
-                                      child: Container(
-                                        padding: EdgeInsets.all(8),
-                                        child: Icon(
-                                            size: 30,
-                                            mic
-                                                ? Icons.mic_outlined
-                                                : Icons.send_rounded,
-                                            color: Colors.white),
                                       ),
-                                      onLongPress: _permissionGranted
-                                          ? () async {
-                                              if (mic) {
+                                      SizedBox(width: 12),
+
+                                      // Send/Mic button
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (!mic) {
+                                            addMessage(
+                                              sendClicked: true,
+                                              myUserName:
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .myUserName!,
+                                              myPicture:
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .myPicture!,
+                                              chatRoomId:
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .chatRoomId!,
+                                              fcmToken:
+                                                  BlocProvider.of<ChatblocBloc>(
+                                                          context)
+                                                      .fcmToken!,
+                                            );
+                                          }
+                                        },
+                                        onLongPress: _permissionGranted && mic
+                                            ? () async {
                                                 setState(() {
                                                   _isRecording = true;
                                                 });
+                                                _animationController.repeat(
+                                                    reverse: true);
                                                 await _audioRecorder
                                                     .startRecording();
                                               }
-                                            }
-                                          : null,
-                                      onLongPressEnd: _permissionGranted
-                                          ? (_) async {
-                                              if (mic) {
+                                            : null,
+                                        onLongPressEnd: _permissionGranted &&
+                                                mic
+                                            ? (_) async {
                                                 setState(() {
                                                   _isRecording = false;
                                                 });
+                                                _animationController.stop();
                                                 final filePath =
                                                     await _audioRecorder
                                                         .stopRecording();
                                                 if (filePath != null) {
-                                                  print(
-                                                      "object---------->>>${filePath}");
                                                   BlocProvider.of<ChatblocBloc>(
                                                           context)
                                                       .uploadAudio(filePath);
                                                 }
                                               }
-                                            }
-                                          : null,
-                                      onTap: () {
-                                        if (messageController.text
-                                            .trim()
-                                            .isNotEmpty) {
-                                          print(
-                                              "message sent ----->>>>${messageController.text}");
-                                          addMessage(
-                                            sendClicked: true,
-                                            myUserName:
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .myUserName!,
-                                            myPicture:
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .myPicture!,
-                                            chatRoomId:
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .chatRoomId!,
-                                            fcmToken:
-                                                BlocProvider.of<ChatblocBloc>(
-                                                        context)
-                                                    .fcmToken!,
-                                          );
-
-                                          mic = true;
-                                        } else {
-                                          messageController.text = "";
-                                          Fluttertoast.showToast(
-                                            msg: "Text should not be empty",
-                                            toastLength: Toast.LENGTH_SHORT,
-                                            gravity: ToastGravity.TOP,
-                                            backgroundColor: Colors.red,
-                                            textColor: Colors.white,
-                                            fontSize: 12.0,
-                                          );
-                                        }
-                                      },
-                                    ),
+                                            : null,
+                                        child: Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                Color(0xFF00D4AA),
+                                                Color(0xFF00B894),
+                                              ],
+                                            ),
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Color(0xFF00D4AA)
+                                                    .withOpacity(0.3),
+                                                blurRadius: 12,
+                                                offset: Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Icon(
+                                            mic ? Icons.mic : Icons.send,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              )
-                            ],
-                          ),
+                              ),
+                            ),
+                          ],
                         ),
-                      )
-                    ],
-                  ),
-                ));
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
-        }));
-    // );
+        },
+      ),
+    );
   }
 
-  String? receiverFcmToken;
+  String _getReplyPreview(String message) {
+    if (message.contains(".aac")) {
+      return "🎵 Audio message";
+    } else if (message.contains(".jpg") || message.contains(".png")) {
+      return "📷 Photo";
+    } else if (message.contains(".gif")) {
+      return "🎬 GIF";
+    } else {
+      return message;
+    }
+  }
 }

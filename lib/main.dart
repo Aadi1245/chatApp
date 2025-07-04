@@ -1,5 +1,3 @@
-// import 'package:chattest/dash_chat_2.dart';
-// import 'package:chattest/pages/home.dart';
 import 'package:chattest/Services/firebase_message.dart';
 import 'package:chattest/Services/get_server_key.dart';
 import 'package:chattest/app_theme.dart';
@@ -10,8 +8,6 @@ import 'package:chattest/pages/profile.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
-// import 'package:chattest/pages/onboarding.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';

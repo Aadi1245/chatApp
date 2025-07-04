@@ -97,11 +97,11 @@ class Authmethods {
     await SharedPreferenceHelper().saveUserId(userDetails.uid);
     await SharedPreferenceHelper().saveUserImage(userDetails.photoURL!);
     await SharedPreferenceHelper().saveUserName(userName);
-    await SharedPreferenceHelper()
-        .saveAccessToken(await notificationServices.getDeviceToken());
-    String Token = await AllApiCalling.createUserAndGetAccessToken(
-        userName, userDetails.displayName!);
-    await SharedPreferenceHelper().saveStreamToken(Token);
+    // await SharedPreferenceHelper()
+    //     .saveAccessToken(await notificationServices.getDeviceToken());
+    // String Token = await AllApiCalling.createUserAndGetAccessToken(
+    //     userName, userDetails.displayName!);
+    // await SharedPreferenceHelper().saveStreamToken(Token);
 
     // final user = stream_video.User.regular(
     //     userId: userName, role: 'admin', name: userDetails.displayName!);
@@ -129,7 +129,7 @@ class Authmethods {
         "Id": userDetails.uid,
         "username": userName.toUpperCase(),
         "SearchKey": firstletter,
-        "accessToken": await notificationServices.getDeviceToken()
+        // "accessToken": await notificationServices.getDeviceToken()
       };
 
       await DataBasemethods().addUser(userInfoMap, userDetails.uid);

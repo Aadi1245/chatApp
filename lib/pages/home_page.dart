@@ -16,10 +16,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   TextEditingController searchController = TextEditingController();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   bool search = false;
+  bool _isLoading = true; // Add loading state
   Stream<QuerySnapshot>? chatRoomsStream;
   var queryResultSet = [];
   var tempSearchStore = [];
@@ -27,6 +31,44 @@ class _HomePageState extends State<HomePage> {
   String getChatRoomIdByUserName(String a, String b) {
     List<String> users = [a.toLowerCase(), b.toLowerCase()]..sort();
     return "${users[0]}_${users[1]}";
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    onTheLoad();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200), // Slightly longer duration
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeInOut), // Stagger the fade
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5), // Start from further down
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.3, 1.0, curve: Curves.easeOutBack), // Delay the slide
+    ));
+
+    // Don't start animation immediately - wait for data to load
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   initiateSearch(String value) {
@@ -55,7 +97,6 @@ class _HomePageState extends State<HomePage> {
           if (element['username'].startsWith(capitalizedValue)) {
             setState(() {
               tempSearchStore.add(element);
-              print("${tempSearchStore[0]["username"]}------------>>>>>>");
             });
           }
         });
@@ -64,236 +105,371 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget chatRoomList() {
-    print("cha------------------->>>>> inside chtroomlistsdfsvd");
     return StreamBuilder(
-        stream: chatRoomsStream,
-        builder: (context, AsyncSnapshot snapshot) {
-          return snapshot.hasData
-              ? ListView.builder(
-                  padding: EdgeInsets.all(10),
-                  itemCount: snapshot.data.docs.length,
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) {
-                    DocumentSnapshot ds = snapshot.data.docs[index];
-                    print("------------------->>>>> inside chtroomlist");
-                    print(
-                        "chatroomlist=======${snapshot.data.docs.length}=====>>>>${ds["lastMessage"]}------${ds["lastMessageSendTs"]}");
-                    return Column(
-                      children: [
-                        ChatRoomListTile(
+      stream: chatRoomsStream,
+      builder: (context, AsyncSnapshot snapshot) {
+        return snapshot.hasData
+            ? snapshot.data.docs.length > 0
+                ? ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: snapshot.data.docs.length,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      DocumentSnapshot ds = snapshot.data.docs[index];
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 12),
+                        child: ChatRoomListTile(
                           chatroomId: ds.id,
                           lastMessage: ds["lastMessage"],
-                          myUserName: myUserName != null ? myUserName! : "",
+                          myUserName: myUserName ?? "",
                           time: ds["lastMessageSendTs"],
                         ),
-                        SizedBox(
-                          height: 10,
-                        )
-                      ],
-                    );
-                  })
-              : Container();
-        });
-  }
-
-  Future<void> setupStreamVideoAfterLogin({
-    required String userName,
-    required String userToken, // JWT from your backend
-    required String displayName,
-  }) async {
-    print(
-        "----------------->>>>>>>>>>setupStreamVideoAfterLogin called successfully");
-    final client = StreamVideo(
-      'vxeyjhp4548f', // replace with your actual API key
-      user: User.regular(
-        userId: userName,
-        name: displayName,
-      ),
-      userToken: userToken,
+                      );
+                    },
+                  )
+                : _buildEmptyState()
+            : Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo),
+                ),
+              );
+      },
     );
-
-    print(
-        "----------------->>>>>>>>>>${client.state.connection.toString()} called successfully");
-
-    // Now you're ready to make or receive calls.
-    // Save the client instance somewhere accessible (e.g., in a global service).
-    CallService().setClient(client);
-    CallService().init(navigatorKey);
   }
 
-  @override
-  void initState() {
-    onTheLoad();
-    super.initState();
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 80,
+            color: Colors.grey.shade400,
+          ),
+          SizedBox(height: 16),
+          Text(
+            "No chats yet",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Start a conversation by searching for friends",
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   List<String> subName = [""];
   onTheLoad() async {
     await getTheSharedpreferenceData();
     chatRoomsStream = await DataBasemethods().getChatRooms();
+    subName = myName?.split(" ") ?? [""];
 
-    print(" after on the load chatRoomsStream-------->>>>${chatRoomsStream}");
+    setState(() {
+      _isLoading = false;
+    });
 
-    subName = myName!.split(" ");
-
-    print(
-        "----------------->>>>>>>>>>setupStreamVideoAfterLogin invoked successfully");
-    setupStreamVideoAfterLogin(
-        userName: myUserName!, userToken: Token!, displayName: myName!);
-    setState(() {});
+    // Start animation after data is loaded
+    await Future.delayed(
+        Duration(milliseconds: 100)); // Small delay to ensure UI is ready
+    if (mounted) {
+      _animationController.forward();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey,
-      resizeToAvoidBottomInset: false,
       body: Container(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              margin: EdgeInsets.only(top: 40, left: 15),
-              child: Row(
-                children: [
-                  Text(
-                    "👋",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.yellowAccent),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.indigo.shade800,
+              Colors.indigo.shade600,
+              Colors.purple.shade400,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
-                  Text(
-                    " Hello,",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white),
-                  ),
-                  Text(
-                    subName.first,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white),
-                  ),
-                  Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => Profile()));
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Icon(
-                        Icons.person,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 10,
-                  )
-                ],
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(left: 20),
-              alignment: Alignment.topLeft,
-              child: Text(
-                "Welcome to  ",
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white),
-              ),
-            ),
-            SizedBox(
-              width: 30,
-            ),
-            Container(
-              height: 70,
-              margin: EdgeInsets.only(left: 25),
-              alignment: Alignment.topLeft,
-              child: Text(
-                "ChatIt  ",
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.only(left: 25, right: 20),
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30))),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 30,
-                    ),
-                    Container(
-                      height: 50,
-                      padding: EdgeInsets.only(top: 5),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: const Color.fromARGB(83, 212, 226, 231)),
-                      child: TextField(
-                        controller: searchController,
-                        onChanged: (value) {
-                          initiateSearch(value.toUpperCase());
-                          // searchController.text == ""
-                          //     ? search = false
-                          //     : search = true;
-                          // setState(() {});
-                        },
-                        decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.search),
-                            hintText: "Search here...",
-                            border: InputBorder.none),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    search
-                        ? ListView(
-                            padding: EdgeInsets.only(left: 10, right: 10),
-                            shrinkWrap: true,
-                            primary: false,
-                            children: tempSearchStore.map((e) {
-                              print("${e["username"]}");
-                              return buildResultCard(e);
-                            }).toList(),
-                          )
-                        : chatRoomList()
-                  ],
+                )
+              : AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return Column(
+                      children: [
+                        // Header Section
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
+                            padding: EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Top Row with greeting and profile
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade400,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.waving_hand,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Hello,",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                          Text(
+                                            "${subName.first}",
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => Profile(),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(50),
+                                        ),
+                                        child: CircleAvatar(
+                                          radius: 22,
+                                          backgroundColor: Colors.white,
+                                          child: myPicture != null
+                                              ? ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
+                                                  child: Image.network(
+                                                    myPicture!,
+                                                    width: 44,
+                                                    height: 44,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : Icon(
+                                                  Icons.person,
+                                                  size: 24,
+                                                  color: Colors.indigo.shade600,
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 20),
+                                Text(
+                                  "Welcome to ChatIt",
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Connect with friends and start chatting",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: Container(
+                            margin: EdgeInsets.symmetric(horizontal: 24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: searchController,
+                              onChanged: (value) =>
+                                  initiateSearch(value.toUpperCase()),
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  color: Colors.grey.shade600,
+                                ),
+                                hintText: "Search for friends...",
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 16,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Expanded(
+                          child: SlideTransition(
+                            position: _slideAnimation,
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(32),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.only(top: 12),
+                                    width: 40,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade300,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: search
+                                        ? _buildSearchResults()
+                                        : _buildChatList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-              ),
-            )
-          ],
         ),
       ),
     );
   }
 
+  Widget _buildSearchResults() {
+    return tempSearchStore.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "No results found",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Try searching with different keywords",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          )
+        : ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            shrinkWrap: true,
+            itemCount: tempSearchStore.length,
+            itemBuilder: (context, index) {
+              return buildResultCard(tempSearchStore[index]);
+            },
+          );
+  }
+
+  Widget _buildChatList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 12),
+          child: Text(
+            "Recent Chats",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+        ),
+        Expanded(child: chatRoomList()),
+      ],
+    );
+  }
+
   String? myUserName, myName, myEmail, myPicture, Token;
   TextEditingController messageController = TextEditingController();
+
   getTheSharedpreferenceData() async {
     myUserName = await SharedPreferenceHelper().getUserName();
     myName = await SharedPreferenceHelper().getUserDisplayName();
@@ -307,92 +483,86 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () async {
         search = false;
-        print("---------------${data["username"]}------${myUserName!}------");
         String chatRoomId =
             getChatRoomIdByUserName(myUserName!, data['username']);
-        print("-----------chat chat-----${chatRoomId!}------");
         Map<String, dynamic> chatInfoMap = {
-          "user": [myUserName, data['username']],
+          "user": [myUserName, data['username']]
         };
         await DataBasemethods().creatChatRoom(chatRoomId, chatInfoMap);
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ChatPage(
-                    name: data['Name'],
-                    profileUrl: data["Image"],
-                    userName: data["username"])));
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatPage(
+              name: data['Name'],
+              profileUrl: data["Image"],
+              userName: data["username"],
+            ),
+          ),
+        );
       },
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 8),
-        child: Material(
-          elevation: 3,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: EdgeInsets.all(10),
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10), color: Colors.white),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                    data['Image'],
-                    height: 70,
-                    width: 70,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        data['Name'],
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black),
-                      ),
-                      Text(
-                        data['username'],
-                        textAlign: TextAlign.left,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: const Color.fromARGB(78, 0, 0, 0)),
-                      ),
-                    ],
-                  ),
-                ),
-                // Spacer(),
-                // Container(
-                //   alignment: Alignment.topLeft,
-                //   child: Text(
-                //     "2:00 Pm",
-                //     textAlign: TextAlign.left,
-                //     maxLines: 1,
-                //     overflow: TextOverflow.ellipsis,
-                //     style: TextStyle(
-                //         fontSize: 14,
-                //         fontWeight: FontWeight.bold,
-                //         color: Colors.black),
-                //   ),
-                // ),
-              ],
+        margin: EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
+          ],
+        ),
+        child: ListTile(
+          contentPadding: EdgeInsets.all(16),
+          leading: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(
+                color: Colors.grey.shade200,
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: Image.network(
+                data['Image'],
+                height: 50,
+                width: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 50,
+                    width: 50,
+                    color: Colors.grey.shade300,
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.grey.shade600,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          title: Text(
+            data['Name'],
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          subtitle: Text(
+            "@${data['username']}",
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey.shade400,
           ),
         ),
       ),
