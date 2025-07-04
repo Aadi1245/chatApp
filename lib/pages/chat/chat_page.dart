@@ -657,7 +657,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
                                               IconButton(
                                                 icon: Icon(
                                                   Icons.gif_box,
-                                                  color: Color(0xFF00D4AA),
+                                                  color: Color(0xFF1A1A2E),
                                                   size: 28,
                                                 ),
                                                 onPressed: () async {
@@ -740,7 +740,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
                                               IconButton(
                                                 icon: Icon(
                                                   Icons.attach_file,
-                                                  color: Color(0xFF00D4AA),
+                                                  color: Color(0xFF1A1A2E),
                                                 ),
                                                 onPressed: () async {
                                                   var image =
@@ -838,14 +838,14 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                               colors: [
-                                                Color(0xFF00D4AA),
-                                                Color(0xFF00B894),
+                                                Color(0xFF1A1A2E),
+                                                Color.fromARGB(255, 34, 34, 60),
                                               ],
                                             ),
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Color(0xFF00D4AA)
+                                                color: Color(0xFF1A1A2E)
                                                     .withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: Offset(0, 4),
