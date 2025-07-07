@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:app_settings/app_settings.dart';
-import 'package:chattest/pages/home_page.dart';
-import 'package:chattest/pages/starter/onboarding.dart';
+import 'package:chattest/views/home_page.dart';
+import 'package:chattest/views/starter/onboarding.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

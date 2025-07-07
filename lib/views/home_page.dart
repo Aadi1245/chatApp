@@ -1,13 +1,13 @@
-import 'package:chattest/Services/call_service.dart';
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/Services/shared_pref.dart';
-import 'package:chattest/main.dart';
-import 'package:chattest/pages/chat/chat_page.dart';
-import 'package:chattest/pages/profile.dart';
+// import 'package:chattest/Utils/Services/call_service.dart';
+import 'package:chattest/Utils/Services/database.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
+// import 'package:chattest/main.dart';
+import 'package:chattest/views/chat/chat_page.dart';
+import 'package:chattest/views/profile.dart';
 import 'package:chattest/widget/chat_room_list_tile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:stream_video_flutter/stream_video_flutter.dart';
+// import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -304,7 +304,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 ),
                                 SizedBox(height: 20),
                                 Text(
-                                  "Welcome to ChatIt",
+                                  "Welcome to Gupshup",
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,

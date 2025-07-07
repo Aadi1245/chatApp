@@ -1,15 +1,14 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:chattest/Services/auth.dart';
-import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/Bloc/OnboardingBloc/onboarding_event.dart';
+import 'package:chattest/Bloc/OnboardingBloc/onboarding_state.dart';
+import 'package:chattest/Utils/Services/auth.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
-import '../../home_page.dart';
-
-part 'onboarding_event.dart';
-part 'onboarding_state.dart';
+import '../../views/home_page.dart';
 
 class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   OnboardingBloc() : super(OnboardingInitial()) {

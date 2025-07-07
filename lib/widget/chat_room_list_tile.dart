@@ -1,5 +1,5 @@
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/pages/chat/chat_page.dart';
+import 'package:chattest/Utils/Services/database.dart';
+import 'package:chattest/views/chat/chat_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 

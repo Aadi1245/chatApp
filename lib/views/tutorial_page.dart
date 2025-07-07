@@ -1,4 +1,4 @@
-import 'package:chattest/pages/home_page.dart';
+import 'package:chattest/views/home_page.dart';
 import 'package:flutter/material.dart';
 
 class TutorialPage extends StatefulWidget {

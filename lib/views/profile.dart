@@ -1,9 +1,8 @@
-import 'package:chattest/Services/auth.dart';
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/pages/starter/onboarding.dart';
+import 'package:chattest/Utils/Services/auth.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
+import 'package:chattest/views/starter/onboarding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:chattest/Services/shared_pref.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

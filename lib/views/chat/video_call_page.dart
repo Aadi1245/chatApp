@@ -1,4 +1,4 @@
-import 'package:chattest/pages/chat/stream_video_services.dart';
+import 'package:chattest/views/chat/stream_video_services.dart';
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 

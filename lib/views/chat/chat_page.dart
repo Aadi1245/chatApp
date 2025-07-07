@@ -3,15 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:chattest/Services/call_service.dart';
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/Services/sendNotificationService.dart';
-import 'package:chattest/Services/shared_pref.dart';
-import 'package:chattest/pages/chat/ApiCalling/all_api_calling.dart';
-import 'package:chattest/pages/chat/audio_record.dart';
-import 'package:chattest/pages/chat/bloc/chatbloc_bloc.dart';
-import 'package:chattest/pages/chat/call_screen.dart';
-import 'package:chattest/pages/chat/video_call_page.dart';
+import 'package:chattest/Bloc/ChatBloc/chatbloc_event.dart';
+import 'package:chattest/Bloc/ChatBloc/chatbloc_state.dart';
+import 'package:chattest/Utils/Services/call_service.dart';
+import 'package:chattest/Utils/Services/database.dart';
+import 'package:chattest/Utils/Services/sendNotificationService.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
+import 'package:chattest/Utils/ApiCalling/all_api_calling.dart';
+import 'package:chattest/views/chat/audio_record.dart';
+import 'package:chattest/Bloc/ChatBloc/chatbloc_bloc.dart';
+import 'package:chattest/Bloc/ChatBloc/gif_keyboard_input.dart';
+import 'package:chattest/views/chat/call_screen.dart';
+import 'package:chattest/views/chat/video_call_page.dart';
 import 'package:chattest/widget/chatMessageTile.dart';
 import 'package:chattest/widget/chat_message_widget.dart';
 import 'package:chattest/widget/common_widgets.dart';
@@ -34,8 +37,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
-
-import 'bloc/gif_keyboard_input.dart';
 
 class ChatPage extends StatefulWidget {
   String userName, profileUrl, name;

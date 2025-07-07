@@ -1,9 +1,11 @@
-import 'package:chattest/Services/auth.dart';
-import 'package:chattest/Services/fcm_service.dart';
-import 'package:chattest/Services/notification_services.dart';
-import 'package:chattest/Services/shared_pref.dart';
-import 'package:chattest/pages/home_page.dart';
-import 'package:chattest/pages/starter/bloc/onboarding_bloc.dart';
+import 'package:chattest/Bloc/OnboardingBloc/onboarding_event.dart';
+import 'package:chattest/Bloc/OnboardingBloc/onboarding_state.dart';
+import 'package:chattest/Utils/Services/auth.dart';
+import 'package:chattest/Utils/Services/fcm_service.dart';
+import 'package:chattest/Utils/Services/notification_services.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
+import 'package:chattest/views/home_page.dart';
+import 'package:chattest/Bloc/OnboardingBloc/onboarding_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';

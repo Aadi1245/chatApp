@@ -1,4 +1,5 @@
-import 'package:chattest/Services/shared_pref.dart';
+// import 'package:chattest/Services/shared_pref.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DataBasemethods {

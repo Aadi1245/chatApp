@@ -1,7 +1,4 @@
-part of 'chatbloc_bloc.dart';
-
-@immutable
-abstract class ChatblocState {}
+class ChatblocState {}
 
 class ChatblocInitial extends ChatblocState {}
 

@@ -3,8 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/Services/sendNotificationService.dart';
+import 'package:chattest/Bloc/ChatBloc/chatbloc_event.dart';
+import 'package:chattest/Bloc/ChatBloc/chatbloc_state.dart';
+// import 'package:chattest/Services/database.dart';
+// import 'package:chattest/Services/sendNotificationService.dart';
+import 'package:chattest/Utils/Services/database.dart';
+import 'package:chattest/Utils/Services/sendNotificationService.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +20,6 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:random_string/random_string.dart';
 import 'package:record/record.dart';
-
-import '../../../Services/shared_pref.dart';
-
-part 'chatbloc_event.dart';
-part 'chatbloc_state.dart';
 
 class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
   String userName, profileUrl, name;
@@ -73,6 +73,7 @@ class ChatblocBloc extends Bloc<ChatblocEvent, ChatblocState> {
     fcmToken = await SharedPreferenceHelper().getAccessToken();
     chatRoomId = getChatRoomIdByUserName(myUserName!, userName);
     print("chatpage shared chatroomid --- ${chatRoomId}");
+    print("chatpage shared fcmToken --- ${fcmToken}");
     getAndSetMessage();
   }
 

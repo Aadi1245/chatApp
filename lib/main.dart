@@ -1,10 +1,10 @@
-import 'package:chattest/Services/firebase_message.dart';
-import 'package:chattest/Services/get_server_key.dart';
-import 'package:chattest/app_theme.dart';
-import 'package:chattest/pages/chat/chat_page.dart';
-import 'package:chattest/pages/home_page.dart';
-import 'package:chattest/pages/starter/onboarding.dart';
-import 'package:chattest/pages/profile.dart';
+// import 'package:chattest/Services/firebase_message.dart';
+// import 'package:chattest/Services/get_server_key.dart';
+import 'package:chattest/Utils/app_theme.dart';
+import 'package:chattest/views/chat/chat_page.dart';
+import 'package:chattest/views/home_page.dart';
+import 'package:chattest/views/starter/onboarding.dart';
+import 'package:chattest/views/profile.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

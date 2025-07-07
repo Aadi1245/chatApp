@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:chattest/pages/chat/audio_record.dart';
+import 'package:chattest/views/chat/audio_record.dart';
 import 'package:chattest/widget/common_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_player.dart';

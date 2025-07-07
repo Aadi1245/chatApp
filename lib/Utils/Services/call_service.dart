@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
-import 'package:chattest/pages/chat/call_screen.dart';
-import 'package:chattest/pages/chat/incoming_callscreen.dart';
+import 'package:chattest/views/chat/call_screen.dart';
+import 'package:chattest/views/chat/incoming_callscreen.dart';
 
 class CallService {
   static final CallService _instance = CallService._internal();

@@ -1,10 +1,9 @@
-import 'package:chattest/Services/call_service.dart';
-import 'package:chattest/Services/database.dart';
-import 'package:chattest/Services/notification_services.dart';
-import 'package:chattest/Services/shared_pref.dart';
-import 'package:chattest/main.dart';
-import 'package:chattest/pages/chat/ApiCalling/all_api_calling.dart';
-import 'package:chattest/pages/home_page.dart';
+import 'package:chattest/Utils/Services/database.dart';
+import 'package:chattest/Utils/Services/notification_services.dart';
+import 'package:chattest/Utils/Services/shared_pref.dart';
+// import 'package:chattest/main.dart';
+// import 'package:chattest/Utils/ApiCalling/all_api_calling.dart';
+import 'package:chattest/views/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -97,8 +96,8 @@ class Authmethods {
     await SharedPreferenceHelper().saveUserId(userDetails.uid);
     await SharedPreferenceHelper().saveUserImage(userDetails.photoURL!);
     await SharedPreferenceHelper().saveUserName(userName);
-    // await SharedPreferenceHelper()
-    //     .saveAccessToken(await notificationServices.getDeviceToken());
+    await SharedPreferenceHelper()
+        .saveAccessToken(await notificationServices.getDeviceToken());
     // String Token = await AllApiCalling.createUserAndGetAccessToken(
     //     userName, userDetails.displayName!);
     // await SharedPreferenceHelper().saveStreamToken(Token);

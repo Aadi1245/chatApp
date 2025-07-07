@@ -1,6 +1,5 @@
-part of 'onboarding_bloc.dart';
+import 'package:flutter/material.dart';
 
-@immutable
 abstract class OnboardingEvent {}
 
 class OnSignWithGoogle extends OnboardingEvent {
